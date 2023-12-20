@@ -32,15 +32,15 @@ def ohm_real():
     return [I, L], [sym.Symbol("I"), sym.Symbol("L")]
 
 def ideal_gas():
+    a = 2
+    b = 3
     M = np.array(9*[1] + 9*[2] + 9*[3])
     T = np.array(3*(3*[10] + 3*[20] + 3*[30]))
     P = np.array(3*(3*([10, 20, 30])))
-    V = M*T/P
-    # return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
-    return [P, M, T, V], [sym.Symbol("P"), sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("V")]
+    V = (a*M*T + b*M)/P
+    return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
 
 def mini_boyle():
     P = np.array([1, 2, 3])
     V = np.array([2.354, 1.177, 0.785])
     return [P, V], [sym.Symbol("P"), sym.Symbol("V")]
-
