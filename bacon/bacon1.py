@@ -57,7 +57,7 @@ class BACON_1:
             if all(M*(1 - self.delta) < l < M*(1 + self.delta) for l in data[-1]):
                 update = "constant"
                 if self.info:
-                    print(f"{symbols[-1]} is constant within our error")
+                    print(f"BACON 1: {symbols[-1]} is constant within our error")
 
         elif mse(a*m + c, b) < self.mse_error and abs(c) > 0.0001:
             sy = self.symbols.append(sym.simplify(b_ - m*a_))
@@ -66,7 +66,7 @@ class BACON_1:
             k = self.new_symbol()
             previous_op = ["linear", k, b_ - k*a_, m]
             if self.info:
-                print(f"{b_} is linearly prop. to {a_}, we then see {symbols[-1]} is constant")
+                print(f"BACON 1: {b_} is linearly prop. to {a_}, we then see {symbols[-1]} is constant")
 
         elif m > self.eps:
             sy = sym.simplify(a_/b_)
@@ -76,7 +76,7 @@ class BACON_1:
                 update = "division"
                 previous_op = update
                 if self.info:
-                    print(f"{a_} increases whilst {b_} also increases, considering new variable {sym.simplify(a_/b_)}")
+                    print(f"BACON 1: {a_} increases whilst {b_} also increases, considering new variable {sym.simplify(a_/b_)}")
 
         elif m < - self.eps:
             sy = sym.simplify(a_*b_)
@@ -86,12 +86,5 @@ class BACON_1:
                 update = "product"
                 previous_op = update
                 if self.info:
-                    print(f"{a_} increases whilst {b_} decreases, considering new variable {sym.simplify(a_*b_)}")
+                    print(f"BACON 1: {a_} increases whilst {b_} decreases, considering new variable {sym.simplify(a_*b_)}")
         return data, symbols, update, previous_op
-
-
-if __name__ == '__main__':
-    initial_data, initial_symbols = d.mini_boyle()
-    a = BACON_1(initial_data, initial_symbols, info=True)
-    a.bacon_iterations()
-
