@@ -12,9 +12,10 @@ mse_error = 0.01
 
 
 class BACON_1:
-    def __init__(self, data, symbols, mse_error=0.01, delta=0.3, eps=0.001):
+    def __init__(self, data, symbols, info, mse_error=0.01, delta=0.3, eps=0.001):
         self.data = data
         self.symbols = symbols
+        self.info = info
         self.mse_error = mse_error
         self.eps = eps
         self.delta = delta
@@ -31,8 +32,7 @@ class BACON_1:
             raise Exception
         return l
 
-    def main(self, info=False):
-        self.info = info
+    def bacon_iterations(self):
         d, sy, u, dt = self.run_bacon(0, 1, self.data, self.symbols, [])
         u = False
         j = 0
@@ -92,6 +92,6 @@ class BACON_1:
 
 if __name__ == '__main__':
     initial_data, initial_symbols = d.mini_boyle()
-    a = BACON_1(initial_data, initial_symbols)
-    a.main(info=True)
+    a = BACON_1(initial_data, initial_symbols, info=True)
+    a.bacon_iterations()
 
