@@ -1,18 +1,11 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from statistics import fmean
 import sympy as sym
-import data as d
 from sklearn.metrics import mean_absolute_error as mse
 
 
-eps = 0.001
-delta = 0.3
-mse_error = 0.01
-
-
 class BACON_1:
-    def __init__(self, data, symbols, info, mse_error=0.01, delta=0.3, eps=0.001):
+    def __init__(self, data, symbols, info=False, mse_error=0.1, delta=0.3, eps=0.01):
         self.data = data
         self.symbols = symbols
         self.info = info
@@ -33,7 +26,7 @@ class BACON_1:
         return l
 
     def bacon_iterations(self):
-        d, sy, u, dt = self.run_bacon(0, 1, self.data, self.symbols, [])
+        d, sy, u, dt = self.run_bacon(0, 1, self.data, self.symbols, "")
         u = False
         j = 0
         while u != "constant" and j < 300:

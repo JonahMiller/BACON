@@ -40,13 +40,24 @@ def ideal_gas(noise=0):
     V = (a*M*T + b*M)/P
     return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
 
+def ohm_large(noise=0):
+    v = 2
+    r = 3
+    T = np.array(9*[100] + 9*[120] + 9*[140])
+    D = np.array(3*(3*[1] + 3*[2] + 3*[3]))
+    L = np.array(3*(3*([0.5, 1, 1.5])))
+    I = np.array(T*D**2/(v*(L + r)))
+    return [T, D, I, L], [sym.Symbol("T"), sym.Symbol("D"), sym.Symbol("I"), sym.Symbol("L")]
+
 
 def allowed_data():
-    data = {"kepler": kepler,
+    data = {
+            "kepler": kepler,
             "boyle_synthetic": boyle_synthetic,
             "boyle_real": boyle_real,
             "ohm_synthetic": ohm_synthetic,
             "ohm_real": ohm_real,
+            "ohm_large": ohm_large,
             "ideal_gas": ideal_gas
            }
     return data
