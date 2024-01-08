@@ -77,7 +77,6 @@ class BACON_3:
                         for cols in small_df:
                             ndf = df.iloc[:, :-2].join(small_df[cols])
                             new_dfs.append(ndf)
-                # self.print_dfs()
             self.dfs = new_dfs
 
         constants = []
