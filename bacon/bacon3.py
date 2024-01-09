@@ -5,6 +5,10 @@ from bacon.bacon1 import BACON_1
 
 
 def run_bacon_1(df, col_1, col_2, verbose=False):
+    """
+    Runs an instance of BACON.1 on the specified columns 
+    col_1 and col_2 in the specified dataframe df.
+    """
     var1, var2 = col_1, col_2
     data1, data2 = df[var1].values, df[var2].values
     if verbose:
@@ -21,6 +25,10 @@ def run_bacon_1(df, col_1, col_2, verbose=False):
 
 
 class BACON_3_layer:
+    """
+    BACON.3 can be thought of a layer-by-layer running of BACON.1 with
+    previous variable fixes. This class runs each layer instance.
+    """
     def __init__(self, df, bacon_1_info=False):
         self.df = df
         self.n_cols = len(df.columns)
@@ -29,6 +37,12 @@ class BACON_3_layer:
         self.bacon_1_info = bacon_1_info
 
     def break_down_df(self):
+        """
+        Creates the lowest level of dataframe to run BACON.1 on.
+        Eg. if a dataframe of variables ABCD is fed in, it creates a
+        dataframe for each combination of fixed A, B with variable C, D to
+        find local patterns for C, D.
+        """
         for i in range(self.n_cols, 2, -1):
             smaller_dfs = []
             for df in self.df_dicts[i]:
@@ -38,6 +52,13 @@ class BACON_3_layer:
         self.smallest_dfs = self.df_dicts[min(self.df_dicts)]
     
     def iterate_over_df(self):
+        """
+        Runs the BACON.1 iterations over the dataframe found above. 
+        if there is a list returned it means a linear relationship was found
+        as the linear relationship value can be a variable it then creates two
+        instances, one with the y-intercept and the other with the gradient of
+        the linear relationship. It returnse the new columns found.
+        """
         new_cols = pd.DataFrame()
         for df in self.smallest_dfs:
             indecies = df.index.values
@@ -57,6 +78,10 @@ class BACON_3_layer:
         return new_cols
     
     def construct_updated_df(self, new_cols):
+        """
+        Reconstructs the dataframe with the new columns, ie. the column
+        for C, D becomes a column for f(C, D) for f the relationship found
+        """
         new_dfs = []
         if len(new_cols.columns) == 1:
             # Replace the last columns of the dataframe into the new column
@@ -72,6 +97,9 @@ class BACON_3_layer:
         return new_dfs
 
     def run_single_iteration(self):
+        """
+        Runs the entire class and returns new dataframes for BACON.3 to act on.
+        """
         self.break_down_df()
         new_cols = self.iterate_over_df()
         df_list = self.construct_updated_df(new_cols)
@@ -79,6 +107,10 @@ class BACON_3_layer:
 
 
 class BACON_3:
+    """
+    Manages the layers of the dataframe, including the potentially new layers found
+    when linear relationships are found. Then it runs BACON.1 on the those two columns. 
+    """
     def __init__(self, data, variables, bacon_1_info=False, bacon_3_info=False):
         self.initial_df = pd.DataFrame({v: d for v, d in zip(variables, data)})
         self.dfs = [self.initial_df]
@@ -87,6 +119,10 @@ class BACON_3:
         self.bacon_3_info = bacon_3_info
 
     def bacon_iterations(self):
+        """
+        Manages the iterations over all the layers in a for loop until each dataframe
+        only has two columns left.
+        """
         while self.not_last_iteration():
             new_dfs = []
             self.check_const_col()
@@ -129,6 +165,11 @@ class BACON_3:
             print(df)
 
     def check_const_col(self):
+        """
+        Checks if there are fixed variables in the columns, these may be from the linearity
+        relationship or just being found when initialised. Should protect against data being
+        put in different orders.
+        """
         for i, df in enumerate(list(self.dfs)):
             temp_dict = df.to_dict("list")
             for idx, val in temp_dict.items():
