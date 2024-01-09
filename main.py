@@ -8,16 +8,16 @@ from bacon.bacon3 import BACON_3
 
 def ParseArgs():
     parser = argparse.ArgumentParser(description="Pat Langley's BACON programs simulator")
-    parser.add_argument("--bacon_3_verbose", action="store_true",
-                        help="activates verbose mode for the program's decisions at the BACON 3 level")
-    parser.add_argument("--bacon_1_verbose", action="store_true",
-                        help="activates verbose mode for the program's decisions at the BACON 1 level")
     parser.add_argument("--dataset", type=str, choices=data.allowed_data(), metavar="D",
                         help="which dataset would you like to analyse")
     parser.add_argument("--bacon", type=int, default=3, metavar="B",
                         help="which BACON version to run on")
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to dataset")
+    parser.add_argument("--bacon_1_verbose", action="store_true",
+                        help="activates verbose mode for the program's decisions at the BACON 1 level")
+    parser.add_argument("--bacon_3_verbose", action="store_true",
+                        help="activates verbose mode for the program's decisions at the BACON 3 level")
     
     args = parser.parse_args()
     return args
