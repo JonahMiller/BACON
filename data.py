@@ -45,9 +45,9 @@ def ohm_large(noise=0):
     r = 3
     T = np.array(9*[100] + 9*[120] + 9*[140])
     D = np.array(3*(3*[1] + 3*[2] + 3*[3]))
-    L = np.array(3*(3*([0.5, 1, 1.5])))
+    L = np.array(3*(3*([5, 10, 15])))
     I = np.array(T*D**2/(v*(L + r)))
-    return [T, D, I, L], [sym.Symbol("T"), sym.Symbol("D"), sym.Symbol("I"), sym.Symbol("L")]
+    return [T, D, L, I], [sym.Symbol("T"), sym.Symbol("D"), sym.Symbol("L"), sym.Symbol("I")]
 
 
 def allowed_data():

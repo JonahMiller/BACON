@@ -3,15 +3,18 @@ from statistics import fmean
 import sympy as sym
 from sklearn.metrics import mean_absolute_error as mse
 
+import warnings
+warnings.filterwarnings('ignore')
 
 class BACON_1:
-    def __init__(self, data, symbols, info=False, mse_error=0.1, delta=0.3, eps=0.01):
+    def __init__(self, data, symbols, info=False, mse_error=0.0001, delta=0.3, eps=0.1):
         self.data = data
         self.symbols = symbols
         self.info = info
         self.mse_error = mse_error
         self.eps = eps
         self.delta = delta
+        self.info = False
 
     def new_symbol(self):
         letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
@@ -31,9 +34,9 @@ class BACON_1:
         j = 0
         while u != "constant" and j < 300:
             d, sy, u, dt = self.run_bacon(0, -1, d, sy, dt)
-            if u == "yes":
+            if u == "product" or u == "division":
                 d, sy, u, dt = self.run_bacon(1, -2, d, sy, dt)
-            elif u == "no":
+            else:
                 d, sy, u, dt = self.run_bacon(1, -1, d, sy, dt)
             j += 1
         return d[-1], sy[-1], dt
@@ -80,4 +83,5 @@ class BACON_1:
                 previous_op = update
                 if self.info:
                     print(f"BACON 1: {a_} increases whilst {b_} decreases, considering new variable {sym.simplify(a_*b_)}")
+        
         return data, symbols, update, previous_op
