@@ -7,16 +7,26 @@ from bacon.bacon1 import BACON_1
 def run_bacon_1(df, col_1, col_2, verbose=False):
     var1, var2 = col_1, col_2
     data1, data2 = df[var1].values, df[var2].values
+    if verbose:
+        unused_df = df.iloc[:, :-2]
+        col_names = unused_df.columns.tolist()
+        col_ave = [unused_df.loc[:, name].mean() for name in col_names]
+        if len(col_names) != 0:
+            print(f"BACON 1: Running BACON 1 on variables [{var1}, {var2}] and") 
+            print(f"         unused variables {col_names} set as {col_ave}.")
+        else:
+            print(f"BACON 1: Running BACON 1 on variables [{var1}, {var2}]")
     bacon_1_instance = BACON_1([data1, data2], [var1, var2], info=verbose)
     return bacon_1_instance.bacon_iterations()
 
 
 class BACON_3_layer:
-    def __init__(self, df):
+    def __init__(self, df, bacon_1_info=False):
         self.df = df
         self.n_cols = len(df.columns)
         self.broken_dfs = []
         self.df_dicts = {self.n_cols: [df]}
+        self.bacon_1_info = bacon_1_info
 
     def break_down_df(self):
         for i in range(self.n_cols, 2, -1):
@@ -33,7 +43,7 @@ class BACON_3_layer:
             indecies = df.index.values
         
             # Perform Bacon.1 on last 2 columns in system
-            results = run_bacon_1(df, df.columns[-1], df.columns[-2])
+            results = run_bacon_1(df, df.columns[-1], df.columns[-2], verbose=self.bacon_1_info)
 
             # Special check for linear relationship added to dataframe
             if isinstance(results[2], list):
@@ -69,29 +79,45 @@ class BACON_3_layer:
 
 
 class BACON_3:
-    def __init__(self, data, variables, info=False):
+    def __init__(self, data, variables, bacon_1_info=False, bacon_3_info=False):
         self.initial_df = pd.DataFrame({v: d for v, d in zip(variables, data)})
         self.dfs = [self.initial_df]
         self.delta = 0.01
+        self.bacon_1_info = bacon_1_info
+        self.bacon_3_info = bacon_3_info
 
     def bacon_iterations(self):
         while self.not_last_iteration():
             new_dfs = []
             self.check_const_col()
             for df in self.dfs:
-                bacon_layer_in_context = BACON_3_layer(df)
+
+                bacon_layer_in_context = BACON_3_layer(df, self.bacon_1_info)
                 new_df = bacon_layer_in_context.run_single_iteration()
                 new_dfs.extend(new_df)
+
+                if self.bacon_3_info:
+                    var1, var2 = df.columns[-1], df.columns[-2]
+                    unused_df = df.iloc[:, :-2]
+                    col_names = unused_df.columns.tolist()
+
+                    print(f"BACON 3: Running BACON 1 on variables [{var1}, {var2}] and") 
+                    print(f"         keeping constant unused variables {col_names}")
+                    print(f"         displayed fix variables {[df.columns[-1] for df in new_df]}.")
+                    
             self.dfs = new_dfs
 
         constants = []
         for df in self.dfs:
             # When only 2 columns left do simple Bacon 1
-            results = run_bacon_1(df, df.columns[0], df.columns[1], verbose=True)
+
+            if self.bacon_3_info:
+                print(f"BACON 3: Running BACON 1 on final variables [{df.columns[0]}, {df.columns[1]}]")
+
+            results = run_bacon_1(df, df.columns[0], df.columns[1], verbose=self.bacon_1_info)
             print(f"BACON 3: {results[1]} is constant at {fmean(results[0])}") 
             constants.append(results[1])
 
-    
     def not_last_iteration(self):
         for df in self.dfs:
             if len(df.columns) > 2:
@@ -111,3 +137,4 @@ class BACON_3:
                 if all(M*(1 - self.delta) < abs(v) < M*(1 + self.delta) for v in val):
                     print(f"BACON 3: {idx} is constant at {mean}")
                     del self.dfs[i]
+

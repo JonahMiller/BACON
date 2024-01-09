@@ -8,8 +8,10 @@ from bacon.bacon3 import BACON_3
 
 def ParseArgs():
     parser = argparse.ArgumentParser(description="Pat Langley's BACON programs simulator")
-    parser.add_argument("--verbose", action="store_true",
-                        help="activates verbose mode for the program's decisions")
+    parser.add_argument("--bacon_3_verbose", action="store_true",
+                        help="activates verbose mode for the program's decisions at the BACON 3 level")
+    parser.add_argument("--bacon_1_verbose", action="store_true",
+                        help="activates verbose mode for the program's decisions at the BACON 1 level")
     parser.add_argument("--dataset", type=str, choices=data.allowed_data(), metavar="D",
                         help="which dataset would you like to analyse")
     parser.add_argument("--bacon", type=int, default=3, metavar="B",
@@ -33,7 +35,9 @@ def main():
     else:
         return Exception("Invalid BACON value specified. Only allowed 1 or 3.")
     
-    bacon = bacon_func(init_data, init_symb, info=args.verbose)
+    bacon = bacon_func(init_data, init_symb, 
+                       bacon_1_info=args.bacon_1_verbose,
+                       bacon_3_info=args.bacon_3_verbose)
     bacon.bacon_iterations()
 
 
