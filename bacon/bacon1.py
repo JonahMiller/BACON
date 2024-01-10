@@ -44,7 +44,7 @@ class BACON_1:
     def run_bacon(self, start, finish, data, symbols, previous_op):
         a, b = data[start], data[finish]
         a_, b_ = symbols[start], symbols[finish]
-        update = "no successful variable"
+        update = "no relationship"
 
         m, c = np.polyfit(a, b, 1)
 
