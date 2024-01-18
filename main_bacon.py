@@ -48,7 +48,7 @@ def main():
     dummy_vars = [sym.Symbol("a")]
     key_var = sym.Symbol("I")
 
-    eqn = bl.simplify_eqs(dummy_vars, const_eqns, key_var).iterate_through_dummys()
+    eqn = bl.simplify_eqs(initial_df, const_eqns, key_var).iterate_through_dummys()
     loss = bl.loss_calc(initial_df, eqn).loss()
     print(loss)
 
