@@ -1,5 +1,6 @@
 import pandas as pd
 from statistics import fmean
+from sympy import Eq
 
 from bacon.bacon1 import BACON_1
 
@@ -117,6 +118,7 @@ class BACON_3:
         self.delta = 0.01
         self.bacon_1_info = bacon_1_info
         self.bacon_3_info = bacon_3_info
+        self.eqns = []
 
     def bacon_iterations(self):
         """
@@ -151,8 +153,9 @@ class BACON_3:
                 print(f"BACON 3: Running BACON 1 on final variables [{df.columns[0]}, {df.columns[1]}]")
 
             results = run_bacon_1(df, df.columns[0], df.columns[1], verbose=self.bacon_1_info)
-            print(f"BACON 3: {results[1]} is constant at {fmean(results[0])}") 
+            print(f"BACON 3: {results[1]} is constant at {fmean(results[0])}")
             constants.append(results[1])
+            self.eqns.append(Eq(results[1], fmean(results[0])))
 
     def not_last_iteration(self):
         for df in self.dfs:
@@ -177,5 +180,5 @@ class BACON_3:
                 M = abs(mean)
                 if all(M*(1 - self.delta) < abs(v) < M*(1 + self.delta) for v in val):
                     print(f"BACON 3: {idx} is constant at {mean}")
+                    self.eqns.append(Eq(idx, mean))
                     del self.dfs[i]
-

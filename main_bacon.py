@@ -1,9 +1,12 @@
 import argparse
+import sympy as sym
+import pandas as pd
 
 import data
 
 from bacon.bacon1 import BACON_1
 from bacon.bacon3 import BACON_3
+import bacon.losses as bl
 
 
 def ParseArgs():
@@ -27,6 +30,7 @@ def main():
 
     data_func = data.allowed_data()[args.dataset]
     init_data, init_symb = data_func(args.noise)
+    initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
 
     if args.bacon == 1:
         bacon_func = BACON_1
@@ -39,6 +43,14 @@ def main():
                        bacon_1_info=args.bacon_1_verbose,
                        bacon_3_info=args.bacon_3_verbose)
     bacon.bacon_iterations()
+
+    const_eqns = bacon.eqns
+    dummy_vars = [sym.Symbol("a")]
+    key_var = sym.Symbol("I")
+
+    eqn = bl.simplify_eqs(dummy_vars, const_eqns, key_var).iterate_through_dummys()
+    loss = bl.loss_calc(initial_df, eqn).loss()
+    print(loss)
 
 
 if __name__ == "__main__":
