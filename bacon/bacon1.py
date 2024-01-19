@@ -7,7 +7,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class BACON_1:
-    def __init__(self, data, symbols, info=False, mse_error=0.0001, delta=0.3, eps=0.0001):
+    def __init__(self, data, symbols, info=False, mse_error=0.0001, delta=0.01, eps=0.0001):
         self.data = data
         self.symbols = symbols
         self.info = info
@@ -29,33 +29,49 @@ class BACON_1:
         return l
 
     def bacon_iterations(self):
+        init_d, init_sy, init_up = self.initial_constant()
+        if init_up == "constant":
+            return init_d, init_sy, init_up
         d, sy, u, dt = self.run_bacon(0, 1, self.data, self.symbols, "")
-        u = False
         j = 0
         while u != "constant" and j < 300:
+            sy_start = len(sy)
             d, sy, u, dt = self.run_bacon(0, -1, d, sy, dt)
             if u == "product" or u == "division":
                 d, sy, u, dt = self.run_bacon(1, -2, d, sy, dt)
             else:
                 d, sy, u, dt = self.run_bacon(1, -1, d, sy, dt)
             j += 1
+            sy_end = len(sy)
+            if sy_start == sy_end:
+                break
         return d[-1], sy[-1], dt
+    
+    def initial_constant(self):
+        M_0 = fmean(self.data[0])
+        M_1 = fmean(self.data[1])
+        if all(M_0*(1 - self.delta) < abs(v) < M_0*(1 + self.delta) for v in self.data[0]):
+            return self.data[0], self.symbols[0], "constant"
+        elif all(M_1*(1 - self.delta) < abs(v) < M_1*(1 + self.delta) for v in self.data[1]):
+            return self.data[1], self.symbols[1], "constant"
+        else:
+            return self.data, self.symbols, "no relationship"
 
     def run_bacon(self, start, finish, data, symbols, previous_op):
         a, b = data[start], data[finish]
         a_, b_ = symbols[start], symbols[finish]
         update = "no relationship"
 
-        m, c = np.polyfit(a, b, 1)
+        m, c = np.polyfit(abs(a), abs(b), 1)
 
         if -self.eps < m < self.eps:
-            M = fmean(data[-1])
-            if all(M*(1 - self.delta) < l < M*(1 + self.delta) for l in data[-1]):
+            M = fmean(b)
+            if all(M*(1 - self.delta) < l < M*(1 + self.delta) for l in b):
                 update = "constant"
                 if self.info:
-                    print(f"BACON 1: {symbols[-1]} is constant within our error")
+                    print(f"BACON 1: {b_} is constant within our error")
 
-        elif mse(a*m + c, b) < self.mse_error and abs(c) > 0.0001:
+        elif mse(abs(a)*m + c, abs(b)) < self.mse_error and abs(c) > 0.0001:
             sy = self.symbols.append(sym.simplify(b_ - m*a_))
             data.append(b - m*a)
             update = "linear"

@@ -45,13 +45,15 @@ def main():
     bacon.bacon_iterations()
 
     const_eqns = bacon.eqns
-    dummy_vars = [sym.Symbol("a")]
-    key_var = sym.Symbol("I")
+    key_var = init_symb[-1]
 
-    eqn = bl.simplify_eqs(initial_df, const_eqns, key_var).iterate_through_dummys()
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(const_eqns)
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    
+    eqn = bl.simplify_eqns(initial_df, const_eqns, key_var).iterate_through_dummys()
     loss = bl.loss_calc(initial_df, eqn).loss()
-    print(loss)
-
+    print(f"Final form is {eqn.rhs} = {eqn.lhs} with loss {loss}.")
 
 if __name__ == "__main__":
     main()

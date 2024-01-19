@@ -32,10 +32,14 @@ class BACON_3_layer:
     """
     def __init__(self, df, bacon_1_info=False):
         self.df = df
+        self.print_df_to_file()
         self.n_cols = len(df.columns)
         self.broken_dfs = []
         self.df_dicts = {self.n_cols: [df]}
         self.bacon_1_info = bacon_1_info
+
+    def print_df_to_file(self):
+        self.df.to_csv('df.txt', sep='\t', index=False)
 
     def break_down_df(self):
         """
