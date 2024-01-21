@@ -7,7 +7,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class BACON_1:
-    def __init__(self, data, symbols, info=False, mse_error=0.0001, delta=0.01, eps=0.0001):
+    def __init__(self, data, symbols, info=False, mse_error=0.00001, delta=0.001, eps=0.00001):
         self.data = data
         self.symbols = symbols
         self.info = info
@@ -29,23 +29,24 @@ class BACON_1:
         return l
 
     def bacon_iterations(self):
-        init_d, init_sy, init_up = self.initial_constant()
-        if init_up == "constant":
-            return init_d, init_sy, init_up
-        d, sy, u, dt = self.run_bacon(0, 1, self.data, self.symbols, "")
+        self.lin_data = ""
+        init_d, init_sy, self.update = self.initial_constant()
+        if self.update == "constant":
+            return init_d, init_sy, self.update
+        self.run_bacon(0, 1)
         j = 0
-        while u != "constant" and j < 300:
-            sy_start = len(sy)
-            d, sy, u, dt = self.run_bacon(0, -1, d, sy, dt)
-            if u == "product" or u == "division":
-                d, sy, u, dt = self.run_bacon(1, -2, d, sy, dt)
+        while self.update != "constant" and j < 10:
+            sy_start = len(self.symbols)
+            self.run_bacon(0, -1)
+            if self.update == "product" or self.update == "division":
+                self.run_bacon(1, -2)
             else:
-                d, sy, u, dt = self.run_bacon(1, -1, d, sy, dt)
+                self.run_bacon(1, -1)
             j += 1
-            sy_end = len(sy)
+            sy_end = len(self.symbols)
             if sy_start == sy_end:
                 break
-        return d[-1], sy[-1], dt
+        return self.data[-1], self.symbols[-1], self.lin_data
     
     def initial_constant(self):
         M_0 = fmean(self.data[0])
@@ -57,47 +58,61 @@ class BACON_1:
         else:
             return self.data, self.symbols, "no relationship"
 
-    def run_bacon(self, start, finish, data, symbols, previous_op):
-        a, b = data[start], data[finish]
-        a_, b_ = symbols[start], symbols[finish]
-        update = "no relationship"
+    def run_bacon(self, start, finish):
+        a, b = self.data[start], self.data[finish]
+        a_, b_ = self.symbols[start], self.symbols[finish]
 
         m, c = np.polyfit(abs(a), abs(b), 1)
 
         if -self.eps < m < self.eps:
-            M = fmean(b)
-            if all(M*(1 - self.delta) < l < M*(1 + self.delta) for l in b):
-                update = "constant"
-                if self.info:
-                    print(f"BACON 1: {b_} is constant within our error")
+            self.check_constant(b_, b)
 
         elif mse(abs(a)*m + c, abs(b)) < self.mse_error and abs(c) > 0.0001:
-            sy = self.symbols.append(sym.simplify(b_ - m*a_))
-            data.append(b - m*a)
-            update = "linear"
-            k = self.new_symbol()
-            previous_op = ["linear", k, b_ - k*a_, m]
-            if self.info:
-                print(f"BACON 1: {b_} is linearly prop. to {a_}, we then see {symbols[-1]} is constant")
+            sy = sym.simplify(b_ - m*a_)
+            if self.new_term(sy):
+                self.check_linear(a_, b_, a, b)
 
         elif m > self.eps:
             sy = sym.simplify(a_/b_)
-            if sy not in symbols and sym.simplify(1/sy) not in symbols and sy != 1:
-                self.symbols.append(sym.simplify(a_/b_))
-                data.append(a / b)
-                update = "division"
-                previous_op = update
-                if self.info:
-                    print(f"BACON 1: {a_} increases whilst {b_} also increases, considering new variable {sym.simplify(a_/b_)}")
-
+            if self.new_term(sy):
+                self.division(a_, b_, a, b)
+    
         elif m < - self.eps:
             sy = sym.simplify(a_*b_)
-            if sy not in symbols and sym.simplify(1/sy) not in symbols and sy != 1:
-                self.symbols.append(sym.simplify(a_*b_))
-                data.append(a * b)
-                update = "product"
-                previous_op = update
-                if self.info:
-                    print(f"BACON 1: {a_} increases whilst {b_} decreases, considering new variable {sym.simplify(a_*b_)}")
-        
-        return data, symbols, update, previous_op
+            if self.new_term(sy):
+                self.product(a_, b_, a, b)    
+    
+    def new_term(self, symbol):
+        return symbol not in self.symbols and sym.simplify(1/symbol) not in self.symbols and symbol != 1
+
+    def check_constant(self, symbol, data):
+        M = fmean(data)
+        if all(M*(1 - self.delta) < l < M*(1 + self.delta) for l in data):
+            self.update = "constant"
+            if self.info:
+                print(f"BACON 1: {symbol} is constant within our error")
+    
+    def check_linear(self, symbol_1, symbol_2, data_1, data_2):
+        m, c = np.polyfit(data_1, data_2, 1)
+        if mse(data_1*m + c, data_2)  < self.mse_error and abs(c) > 0.0001:
+            self.symbols.append(sym.simplify(symbol_2 - m*symbol_1))
+            self.data.append(data_2 - m*data_1)
+            self.update = "linear"
+            k = self.new_symbol()
+            self.lin_data = ["linear", k, symbol_2 - k*symbol_1, m]
+            if self.info:
+                print(f"BACON 1: {symbol_2} is linearly prop. to {symbol_1}, we then see {self.symbols[-1]} is constant")
+    
+    def product(self, symbol_1, symbol_2, data_1, data_2):
+        self.symbols.append(sym.simplify(symbol_1*symbol_2))
+        self.data.append(data_1*data_2)
+        self.update = "product"
+        if self.info:
+            print(f"BACON 1: {symbol_1} increases whilst {symbol_2} decreases, considering new variable {sym.simplify(symbol_1*symbol_2)}")
+    
+    def division(self, symbol_1, symbol_2, data_1, data_2):
+        self.symbols.append(sym.simplify(symbol_1/symbol_2))
+        self.data.append(data_1/data_2)
+        self.update = "division"
+        if self.info:
+            print(f"BACON 1: {symbol_1} increases whilst {symbol_2} increases, considering new variable {sym.simplify(symbol_1/symbol_2)}")
