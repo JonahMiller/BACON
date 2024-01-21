@@ -32,7 +32,7 @@ class BACON_3_layer:
     """
     def __init__(self, df, bacon_1_info=False):
         self.df = df
-        self.print_df_to_file()
+        # self.print_df_to_file()
         self.n_cols = len(df.columns)
         self.broken_dfs = []
         self.df_dicts = {self.n_cols: [df]}
