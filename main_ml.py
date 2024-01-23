@@ -1,6 +1,6 @@
 import argparse
 
-import data
+import data.get_data as data
 
 from ml_methods.symbolic_regression import main as pysrmain
 

@@ -3,7 +3,7 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
 
-def derivative(X, t, beta, v):
+def derivative_SIR(X, t, beta, v):
     S, I, R = X
     N = sum(X)
     dS_dt = - beta*I*S
@@ -26,6 +26,11 @@ def rungekutta4(f, y0, t, args=()):
         y[i+1] = y[i] + (h / 6.) * (k1 + 2*k2 + 2*k3 + k4)
     return y
 
+def SIR(beta, v, S_0, I_0, R_0, init_time, end_time, steps):
+    time = np.arange(init_time, end_time, steps)
+    sol = rungekutta4(derivative_SIR, [S_0, I_0, R_0], time, args=(beta, v))
+    return sol[:, 0], sol[:, 1], sol[:, 2]
+    
 
 if __name__ == "__main__":
     beta = 1e-8
@@ -35,13 +40,20 @@ if __name__ == "__main__":
     R_0 = 0
 
     time = np.arange(0, 600, 0.0004)
-    sol = rungekutta4(derivative, [S_0, I_0, R_0], time, args=(beta, v))
+    sol = rungekutta4(derivative_SIR, [S_0, I_0, R_0], time, args=(beta, v))
 
     plt.plot(time, sol[:, 0], "black", label="S")
     plt.plot(time, sol[:, 1], "red", label="I")
     plt.plot(time, sol[:, 2], "blue", label="R")
     plt.legend(loc="best")
     plt.ylabel("Population")
+    plt.xlabel("Time")
+    plt.grid()
+    plt.show()
+    plt.clf()
+    
+    plt.plot(time, beta*(1/v)*sol[:, 0], "green", label="R_0")
+    plt.ylabel("R_0")
     plt.xlabel("Time")
     plt.grid()
     plt.show()
