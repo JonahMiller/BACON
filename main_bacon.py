@@ -2,7 +2,7 @@ import argparse
 import sympy as sym
 import pandas as pd
 
-import data
+import data.get_data as data
 
 from bacon.bacon1 import BACON_1
 from bacon.bacon3 import BACON_3

@@ -7,7 +7,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class BACON_1:
-    def __init__(self, data, symbols, info=False, mse_error=0.0001, delta=0.01, eps=0.0001):
+    def __init__(self, data, symbols, info=False, mse_error=0.0001, delta=0.001, eps=0.0001):
         self.data = data
         self.symbols = symbols
         self.info = info
