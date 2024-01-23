@@ -1,7 +1,7 @@
 import numpy as np
 import sympy as sym
 
-from ode_systems import SIR
+from data.ode_systems import SIR
 
 
 def kepler(noise=0):
@@ -81,6 +81,7 @@ def allowed_data():
             "ohm_real": ohm_real,
             "ohm_large": ohm_large,
             "ideal_gas": ideal_gas,
-            "black": black
+            "black": black,
+            "sir": sir
            }
     return data
