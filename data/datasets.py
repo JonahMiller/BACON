@@ -52,8 +52,8 @@ def ohm_large(noise=0):
     return [T, D, L, I], [sym.Symbol("T"), sym.Symbol("D"), sym.Symbol("L"), sym.Symbol("I")]
 
 def black(noise=0):
-    c_1 = 0.31
-    c_2 = 2.54
+    c_1 = 4.2
+    c_2 = 1.81
     M_1 = np.array(27*[1] + 27*[2] + 27*[3])
     M_2 = np.array(3*(9*[1] + 9*[2] + 9*[3]))
     T_1 = np.array(9*(3*[50] + 3*[60] + 3*[70]))

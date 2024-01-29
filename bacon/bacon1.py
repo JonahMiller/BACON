@@ -2,17 +2,17 @@ import numpy as np
 from statistics import fmean
 import sympy as sym
 from sklearn.metrics import mean_absolute_error as mse
+from scipy.stats import linregress as lr
 
 import warnings
 warnings.filterwarnings('ignore')
 
 class BACON_1:
-    def __init__(self, data, symbols, info=False, mse_error=0.0001, delta=0.001, eps=0.0001):
+    def __init__(self, data, symbols, info=False, lin_bound=0.0001, delta=0.01):
         self.data = data
         self.symbols = symbols
         self.info = info
-        self.mse_error = mse_error
-        self.eps = eps
+        self.lin_bound = lin_bound
         self.delta = delta
         self.info = info
 
@@ -81,24 +81,24 @@ class BACON_1:
         a, b = self.data[start], self.data[finish]
         a_, b_ = self.symbols[start], self.symbols[finish]
 
-        m, c = np.polyfit(abs(a), abs(b), 1)
-        if abs(m) < self.eps:
-            self.check_constant(b_, b)
+        m, c, r, p, std_err = lr(abs(a), abs(b))
+        self.check_constant(b_, abs(b))
 
-        elif mse(abs(a)*m + c, abs(b)) < self.mse_error and abs(c) > 0.0001:
-            sy = sym.simplify(b_ - m*a_)
-            if self.new_term(sy):
-                self.check_linear(a_, b_, a, b)
+        if self.update != "constant":
+            if 1 - abs(r) < self.lin_bound and abs(c) > 0.0000001:
+                sy = sym.simplify(b_ - m*a_)
+                if self.new_term(sy):
+                    self.check_linear(a_, b_, a, b, r)
 
-        elif m > self.eps:
-            sy = sym.simplify(a_/b_)
-            if self.new_term(sy):
-                self.division(a_, b_, a, b)
-    
-        elif m < - self.eps:
-            sy = sym.simplify(a_*b_)
-            if self.new_term(sy):
-                self.product(a_, b_, a, b)
+            elif r > 0:
+                sy = sym.simplify(a_/b_)
+                if self.new_term(sy):
+                    self.division(a_, b_, a, b)
+        
+            elif r < 0:
+                sy = sym.simplify(a_*b_)
+                if self.new_term(sy):
+                    self.product(a_, b_, a, b)
     
     def new_term(self, symbol):
         '''
@@ -120,20 +120,19 @@ class BACON_1:
             if self.info:
                 print(f"BACON 1: {symbol} is constant within our error")
     
-    def check_linear(self, symbol_1, symbol_2, data_1, data_2):
+    def check_linear(self, symbol_1, symbol_2, data_1, data_2, r):
         '''
         Checks if the new term BACON.1 proposed is linearly proportional
         with the other term in context.
         '''
         m, c = np.polyfit(data_1, data_2, 1)
-        if mse(data_1*m + c, data_2)  < self.mse_error and abs(c) > 0.0001:
-            self.symbols.append(sym.simplify(symbol_2 - m*symbol_1))
-            self.data.append(data_2 - m*data_1)
-            self.update = "linear"
-            k = self.new_symbol()
-            self.lin_data = ["linear", k, symbol_2 - k*symbol_1, m]
-            if self.info:
-                print(f"BACON 1: {symbol_2} is linearly prop. to {symbol_1}, we then see {self.symbols[-1]} is constant")
+        self.symbols.append(sym.simplify(symbol_2 - m*symbol_1))
+        self.data.append(data_2 - m*data_1)
+        self.update = "linear"
+        k = self.new_symbol()
+        self.lin_data = ["linear", k, symbol_2 - k*symbol_1, m]
+        if self.info:
+            print(f"BACON 1: {symbol_2} is linearly prop. to {symbol_1}, we then see {self.symbols[-1]} is constant")
     
     def product(self, symbol_1, symbol_2, data_1, data_2):
         '''

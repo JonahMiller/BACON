@@ -48,12 +48,16 @@ def main():
     key_var = init_symb[-1]
 
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print(const_eqns)
+    print("The constant equations found are:")
+    for eqn in const_eqns:
+        print(f"{eqn.rhs} = {eqn.lhs}")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     
     eqn = bl.simplify_eqns(initial_df, const_eqns, key_var).iterate_through_dummys()
     loss = bl.loss_calc(initial_df, eqn).loss()
     print(f"Final form is {eqn.rhs} = {eqn.lhs} with loss {loss}.")
+    
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 if __name__ == "__main__":
     main()

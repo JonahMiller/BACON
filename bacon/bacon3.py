@@ -133,7 +133,6 @@ class BACON_3:
             new_dfs = []
             self.check_const_col()
             for df in self.dfs:
-
                 bacon_layer_in_context = BACON_3_layer(df, self.bacon_1_info)
                 new_df = bacon_layer_in_context.run_single_iteration()
                 new_dfs.extend(new_df)
@@ -157,7 +156,9 @@ class BACON_3:
                 print(f"BACON 3: Running BACON 1 on final variables [{df.columns[0]}, {df.columns[1]}]")
 
             results = run_bacon_1(df, df.columns[0], df.columns[1], verbose=self.bacon_1_info)
-            print(f"BACON 3: {results[1]} is constant at {fmean(results[0])}")
+
+            if self.bacon_3_info:
+                print(f"BACON 3: {results[1]} is constant at {fmean(results[0])}")
             constants.append(results[1])
             self.eqns.append(Eq(results[1], fmean(results[0])))
 
@@ -183,6 +184,7 @@ class BACON_3:
                 mean = fmean(val)
                 M = abs(mean)
                 if all(M*(1 - self.delta) < abs(v) < M*(1 + self.delta) for v in val):
-                    print(f"BACON 3: {idx} is constant at {mean}")
+                    if self.bacon_3_info:
+                        print(f"BACON 3: {idx} is constant at {mean}")
                     self.eqns.append(Eq(idx, mean))
                     del self.dfs[i]
