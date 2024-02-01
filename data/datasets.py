@@ -10,16 +10,20 @@ def kepler(noise=0):
     D = np.power(n, 2)
     return [P, D], [sym.Symbol("P"), sym.Symbol("D")]
 
+
 def boyle_synthetic(noise=0):
     c = 3
     V = np.linspace(1, 32, 40)
     P = c/V + noise*np.random.normal(0, 1, 40)
     return [P, V], [sym.Symbol("P"), sym.Symbol("V")]
 
+
 def boyle_real(noise=0):
     V = np.array([1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 24, 28, 32])
-    P = np.array([29.750, 19.125, 14.375, 9.5, 7.125, 5.625, 4.875, 4.25, 3.75, 3.375, 3, 2.625, 2.25, 2, 1.875, 1.75, 1.5, 1.375, 1.25])
+    P = np.array([29.750, 19.125, 14.375, 9.5, 7.125, 5.625, 4.875, 4.25, 3.75,
+                  3.375, 3, 2.625, 2.25, 2, 1.875, 1.75, 1.5, 1.375, 1.25])
     return [P, V], [sym.Symbol("P"), sym.Symbol("V")]
+
 
 def ohm_synthetic(v=2, r=3, noise=0):
     # v = 2
@@ -28,6 +32,7 @@ def ohm_synthetic(v=2, r=3, noise=0):
     I = v/(r + L) + noise*np.random.normal(0, 1, 10)
     return [I, L], [sym.Symbol("I"), sym.Symbol("L")]
 
+
 def combine_ohm(noise=0):
     mat = np.array(10*["IRON"] + 10*["TITANIUM"])
     data1, symbols1 = ohm_synthetic(v=2, r=3)
@@ -35,10 +40,12 @@ def combine_ohm(noise=0):
     data = [np.append(data1[0], data2[0]), np.append(data1[1], data2[1])]
     return [mat] + data, ["ELEMENT"] + symbols1
 
+
 def ohm_real(noise=0):
     L = np.array([2, 4, 6, 10, 18, 34, 66, 130])
     I = np.array([326.75, 300.75, 277.75, 238.25, 190.75, 134.50, 83.25, 48.50])
     return [I, L], [sym.Symbol("I"), sym.Symbol("L")]
+
 
 def ideal_gas(noise=0):
     a = 2
@@ -49,6 +56,7 @@ def ideal_gas(noise=0):
     V = (a*M*T + b*M)/P + noise*np.random.normal(0, 1, 27)
     return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
 
+
 def ohm_large(noise=0):
     v = 2
     r = 3
@@ -57,6 +65,7 @@ def ohm_large(noise=0):
     L = np.array(3*(3*([5, 10, 15])))
     I = np.array(T*D**2/(v*(L + r)))
     return [T, D, L, I], [sym.Symbol("T"), sym.Symbol("D"), sym.Symbol("L"), sym.Symbol("I")]
+
 
 def black(noise=0):
     c_1 = 4.2
@@ -68,6 +77,7 @@ def black(noise=0):
     T_f = np.array((c_1*M_1*T_1 + c_2*M_2*T_2)/(c_1*M_1 + c_2*M_2))
     return [M_1, M_2, T_1, T_2, T_f], \
            [sym.Symbol("M_1"), sym.Symbol("M_2"), sym.Symbol("T_1"), sym.Symbol("T_2"), sym.Symbol("T_f")]
+
 
 def sir(noise=0):
     beta = 1e-8

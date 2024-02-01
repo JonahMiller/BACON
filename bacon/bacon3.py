@@ -8,7 +8,7 @@ import bacon.losses as bl
 
 def run_bacon_1(df, col_1, col_2, verbose=False):
     """
-    Runs an instance of BACON.1 on the specified columns 
+    Runs an instance of BACON.1 on the specified columns
     col_1 and col_2 in the specified dataframe df.
     """
     if verbose:
@@ -16,7 +16,7 @@ def run_bacon_1(df, col_1, col_2, verbose=False):
         col_names = unused_df.columns.tolist()
         col_ave = [unused_df.loc[:, name].mean() for name in col_names]
         if len(col_names) != 0:
-            print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}] and") 
+            print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}] and")
             print(f"         unused variables {col_names} set as {col_ave}.")
         else:
             print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}]")
@@ -54,10 +54,10 @@ class BACON_3_layer:
                     smaller_dfs.append(df[df[df.columns[self.n_cols - i]] == k])
             self.df_dicts[i - 1] = smaller_dfs
         self.smallest_dfs = self.df_dicts[min(self.df_dicts)]
-    
+
     def iterate_over_df(self):
         """
-        Runs the BACON.1 iterations over the dataframe found above. 
+        Runs the BACON.1 iterations over the dataframe found above.
         if there is a list returned it means a linear relationship was found
         as the linear relationship value can be a variable it then creates two
         instances, one with the y-intercept and the other with the gradient of
@@ -66,13 +66,13 @@ class BACON_3_layer:
         new_cols = pd.DataFrame()
         for df in self.smallest_dfs:
             indecies = df.index.values
-        
+
             # Perform Bacon.1 on last 2 columns in system
             results = run_bacon_1(df, df.columns[-1], df.columns[-2], verbose=self.bacon_1_info)
 
             # Special check for linear relationship added to dataframe
             if isinstance(results[2], list):
-                current_data = pd.DataFrame({results[2][2]: results[0], 
+                current_data = pd.DataFrame({results[2][2]: results[0],
                                             results[2][1]: results[2][3]}, index=indecies)
                 new_cols = pd.concat([new_cols, current_data])
             else:
@@ -80,7 +80,7 @@ class BACON_3_layer:
                 current_data = pd.DataFrame({results[1]: results[0]}, index=indecies)
                 new_cols = pd.concat([new_cols, current_data])
         return new_cols
-    
+
     def construct_updated_df(self, new_cols):
         """
         Reconstructs the dataframe with the new columns, ie. the column
@@ -113,7 +113,7 @@ class BACON_3_layer:
 class BACON_3:
     """
     Manages the layers of the dataframe, including the potentially new layers found
-    when linear relationships are found. Then it runs BACON.1 on the those two columns. 
+    when linear relationships are found. Then it runs BACON.1 on the those two columns.
     """
     def __init__(self, initial_df, bacon_1_info=False, bacon_3_info=False):
         self.initial_df = initial_df
@@ -141,10 +141,10 @@ class BACON_3:
                     unused_df = df.iloc[:, :-2]
                     col_names = unused_df.columns.tolist()
 
-                    print(f"BACON 3: Running BACON 1 on variables [{var1}, {var2}] and") 
+                    print(f"BACON 3: Running BACON 1 on variables [{var1}, {var2}] and")
                     print(f"         keeping constant unused variables {col_names}")
                     print(f"         displayed fix variables {[df.columns[-1] for df in new_df]}.")
-                    
+
             self.dfs = new_dfs
 
         constants = []
@@ -172,11 +172,11 @@ class BACON_3:
         for eqn in const_eqns:
             print(f"{eqn.rhs} = {eqn.lhs}")
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        
+
         eqn = bl.simplify_eqns(self.initial_df, const_eqns, key_var).iterate_through_dummys()
         loss = bl.loss_calc(self.initial_df, eqn).loss()
         print(f"Final form is {eqn.rhs} = {eqn.lhs} with loss {loss}.")
-        
+
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
     def not_last_iteration(self):
@@ -184,7 +184,7 @@ class BACON_3:
             if len(df.columns) > 2:
                 return True
         return False
-    
+
     def print_dfs(self):
         for df in self.dfs:
             print(df)

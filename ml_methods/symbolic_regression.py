@@ -1,9 +1,7 @@
-import numpy as np
 import pandas as pd
 
 from pysr import PySRRegressor
 
-import data as d
 
 def main(data, variables):
 
