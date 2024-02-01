@@ -3,6 +3,7 @@ from statistics import fmean
 from sympy import Eq
 
 from bacon.bacon1 import BACON_1
+import bacon.losses as bl
 
 
 def run_bacon_1(df, col_1, col_2, verbose=False):
@@ -10,18 +11,16 @@ def run_bacon_1(df, col_1, col_2, verbose=False):
     Runs an instance of BACON.1 on the specified columns 
     col_1 and col_2 in the specified dataframe df.
     """
-    var1, var2 = col_1, col_2
-    data1, data2 = df[var1].values, df[var2].values
     if verbose:
         unused_df = df.iloc[:, :-2]
         col_names = unused_df.columns.tolist()
         col_ave = [unused_df.loc[:, name].mean() for name in col_names]
         if len(col_names) != 0:
-            print(f"BACON 1: Running BACON 1 on variables [{var1}, {var2}] and") 
+            print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}] and") 
             print(f"         unused variables {col_names} set as {col_ave}.")
         else:
-            print(f"BACON 1: Running BACON 1 on variables [{var1}, {var2}]")
-    bacon_1_instance = BACON_1([data1, data2], [var1, var2], info=verbose)
+            print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}]")
+    bacon_1_instance = BACON_1(df[[col_1, col_2]], bacon_1_info=verbose)
     return bacon_1_instance.bacon_iterations()
 
 
@@ -116,9 +115,9 @@ class BACON_3:
     Manages the layers of the dataframe, including the potentially new layers found
     when linear relationships are found. Then it runs BACON.1 on the those two columns. 
     """
-    def __init__(self, data, variables, bacon_1_info=False, bacon_3_info=False):
-        self.initial_df = pd.DataFrame({v: d for v, d in zip(variables, data)})
-        self.dfs = [self.initial_df]
+    def __init__(self, initial_df, bacon_1_info=False, bacon_3_info=False):
+        self.initial_df = initial_df
+        self.dfs = [initial_df]
         self.delta = 0.01
         self.bacon_1_info = bacon_1_info
         self.bacon_3_info = bacon_3_info
@@ -161,6 +160,24 @@ class BACON_3:
                 print(f"BACON 3: {results[1]} is constant at {fmean(results[0])}")
             constants.append(results[1])
             self.eqns.append(Eq(results[1], fmean(results[0])))
+
+        self.bacon_losses()
+
+    def bacon_losses(self):
+        const_eqns = self.eqns
+        key_var = self.initial_df.columns[-1]
+
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("The constant equations found are:")
+        for eqn in const_eqns:
+            print(f"{eqn.rhs} = {eqn.lhs}")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        
+        eqn = bl.simplify_eqns(self.initial_df, const_eqns, key_var).iterate_through_dummys()
+        loss = bl.loss_calc(self.initial_df, eqn).loss()
+        print(f"Final form is {eqn.rhs} = {eqn.lhs} with loss {loss}.")
+        
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
     def not_last_iteration(self):
         for df in self.dfs:

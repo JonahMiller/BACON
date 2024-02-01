@@ -7,14 +7,14 @@ from scipy.stats import linregress as lr
 import warnings
 warnings.filterwarnings('ignore')
 
+
 class BACON_1:
-    def __init__(self, data, symbols, info=False, lin_bound=0.0001, delta=0.01):
-        self.data = data
-        self.symbols = symbols
-        self.info = info
+    def __init__(self, initial_df, bacon_1_info=False, lin_bound=0.0001, delta=0.01):
+        self.symbols = list(initial_df)
+        self.data = [initial_df[col_name] for col_name in self.symbols]
+        self.info = bacon_1_info
         self.lin_bound = lin_bound
         self.delta = delta
-        self.info = info
 
     def new_symbol(self):
         '''

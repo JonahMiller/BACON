@@ -21,12 +21,19 @@ def boyle_real(noise=0):
     P = np.array([29.750, 19.125, 14.375, 9.5, 7.125, 5.625, 4.875, 4.25, 3.75, 3.375, 3, 2.625, 2.25, 2, 1.875, 1.75, 1.5, 1.375, 1.25])
     return [P, V], [sym.Symbol("P"), sym.Symbol("V")]
 
-def ohm_synthetic(noise=0):
-    v = 2
-    r = 3
+def ohm_synthetic(v=2, r=3, noise=0):
+    # v = 2
+    # r = 3
     L = np.linspace(2, 130, 10)
     I = v/(r + L) + noise*np.random.normal(0, 1, 10)
     return [I, L], [sym.Symbol("I"), sym.Symbol("L")]
+
+def combine_ohm(noise=0):
+    mat = np.array(10*["IRON"] + 10*["TITANIUM"])
+    data1, symbols1 = ohm_synthetic(v=2, r=3)
+    data2, symbols2 = ohm_synthetic(v=1, r=1)
+    data = [np.append(data1[0], data2[0]), np.append(data1[1], data2[1])]
+    return [mat] + data, ["ELEMENT"] + symbols1
 
 def ohm_real(noise=0):
     L = np.array([2, 4, 6, 10, 18, 34, 66, 130])
@@ -78,6 +85,7 @@ def allowed_data():
             "boyle_synthetic": boyle_synthetic,
             "boyle_real": boyle_real,
             "ohm_synthetic": ohm_synthetic,
+            "combine_ohm": combine_ohm,
             "ohm_real": ohm_real,
             "ohm_large": ohm_large,
             "ideal_gas": ideal_gas,

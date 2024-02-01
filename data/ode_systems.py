@@ -57,7 +57,7 @@ def plot_model(ax, x_y, time, alpha=1, lw=2, title="SIR model",):
 def pytensor_forward_model_matrix(theta):
     return rungekutta4(func=derivative_SIR, y0=theta[-3:], t=np.arange(0, 600), args=(*theta[:2],))
 
-
+# https://www.pymc.io/projects/examples/en/latest/ode_models/ODE_Lotka_Volterra_multiple_ways.html
 class inference_SIR:
     def __init__(self, S, I, R):
         self.S = S
