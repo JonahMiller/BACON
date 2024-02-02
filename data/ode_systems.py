@@ -52,25 +52,34 @@ def plot_model(ax, x_y, time, alpha=1, lw=2, title="SIR model",):
     ax.grid()
     return ax
 
+
+def noisy_SIR(S, I, R, index, noise):
+    S_data, I_data, R_data = [], [], []
+    for i in index:
+        new_S = max(S[i] + noise*np.random.normal(0, 1), 0)
+        new_I = max(I[i] + noise*np.random.normal(0, 1), 0)
+        new_R = max(R[i] + noise*np.random.normal(0, 1), 0)
+        S_data.append(int(new_S))
+        I_data.append(int(new_I))
+        R_data.append(int(new_R))
+    return S_data, I_data, R_data
+
+
 # decorator with input and output types a Pytensor double float tensors
 @as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
 def pytensor_forward_model_matrix(theta):
-    return rungekutta4(func=derivative_SIR, y0=theta[-3:], t=np.arange(0, 600), args=(*theta[:2],))
+    return rungekutta4(func=derivative_SIR, y0=theta[-3:], t=[50, 70, 100, 120, 150, 180, 250], args=(*theta[:2],))
 
 
 # https://www.pymc.io/projects/examples/en/latest/ode_models/ODE_Lotka_Volterra_multiple_ways.html
 class inference_SIR:
-    def __init__(self, S, I, R):
+    def __init__(self, S, I, R, t):
         self.S = S
         self.I = I
         self.R = R
-        self.n = len(self.I)
-        self.S_0 = self.S[0]
-        self.I_0 = self.I[0]
-        self.R_0 = self.R[0]
-        self.time = np.arange(0, self.n, 0.01)
+        self.time = np.arange(0, 300, 1)
         self.df = pd.DataFrame(dict(
-            step=np.arange(0, self.n),
+            step=t,
             S=self.S,
             I=self.I,
             R=self.R
@@ -96,34 +105,36 @@ class inference_SIR:
     def least_squares_pred(self):
         results = least_squares(self.ode_model_resid, x0=self.theta)
         self.ls_theta = results.x
+        self.return_thetas()
         x_y = rungekutta4(func=derivative_SIR, y0=self.ls_theta[-3:], t=self.time, args=(*self.ls_theta[:2], ))
         fig, ax = plt.subplots()
         self.plot_data(ax, lw=0)
         plot_model(ax, x_y, self.time, title="Least squares SIR model")
 
     def plot_data(self, ax, lw=2, title="SIR model data"):
-        ax.plot(self.df.step, self.S, color='black', lw=lw, marker="+", markersize=2, label="S (Data)")
-        ax.plot(self.df.step, self.I, color='red', lw=lw, marker="+", markersize=2, label="I (Data)")
-        ax.plot(self.df.step, self.R, color='blue', lw=lw, marker="+", markersize=2, label="R (Data)")
-        ax.set_xlim([0, self.n])
+        ax.plot(self.df.step, self.S, color='black', lw=lw, marker="+", markersize=12, label="S (Data)")
+        ax.plot(self.df.step, self.I, color='red', lw=lw, marker="+", markersize=12, label="I (Data)")
+        ax.plot(self.df.step, self.R, color='blue', lw=lw, marker="+", markersize=12, label="R (Data)")
+        ax.set_xlim([0, 300])
         ax.set_xlabel("Step", fontsize=14)
         ax.set_ylabel("Population size", fontsize=14)
         ax.set_title(title, fontsize=16)
         return ax
 
     def return_thetas(self):
-        return self.theta, self.ls_theta
+        print([t for t in self.theta])
+        print([t for t in self.ls_theta])
 
     def infer(self):
         az.style.use("arviz-whitegrid")
         theta = self.ls_theta
         with pm.Model() as model:
             # Priors
-            beta = pm.TruncatedNormal("beta", mu=theta[0], sigma=0.00000001, lower=-100, initval=theta[0])
+            beta = pm.TruncatedNormal("beta", mu=theta[0], sigma=0.000000001, lower=-100, initval=theta[0])
             v = pm.TruncatedNormal("v", mu=theta[1], sigma=0.001, lower=-100, initval=theta[1])
-            S_0 = pm.TruncatedNormal("S_0", mu=theta[2], sigma=1, lower=0, initval=theta[2])
-            I_0 = pm.TruncatedNormal("I_0", mu=theta[3], sigma=1, lower=0, initval=theta[3])
-            R_0 = pm.TruncatedNormal("R_0", mu=theta[4], sigma=1, lower=0, initval=theta[4])
+            S_0 = pm.TruncatedNormal("S_0", mu=theta[2], sigma=100, lower=0, initval=theta[2])
+            I_0 = pm.TruncatedNormal("I_0", mu=theta[3], sigma=100, lower=0, initval=theta[3])
+            R_0 = pm.TruncatedNormal("R_0", mu=theta[4], sigma=100, lower=-100, initval=theta[4])
             sigma = pm.HalfNormal("sigma", 10)
             # Ode solution function
             ode_solution = pytensor_forward_model_matrix(
@@ -134,7 +145,7 @@ class inference_SIR:
 
         vars_list = list(model.values_to_rvs.keys())[:-1]
         sampler = "DEMetropolisZ"
-        tune = draws = 5000
+        tune = draws = 2000
         with model:
             trace_DEMZ = pm.sample(step=[pm.DEMetropolis(vars_list)], tune=tune, draws=draws)
         trace = trace_DEMZ
@@ -171,27 +182,16 @@ if __name__ == "__main__":
     I_0 = 1000
     R_0 = 0
 
-    # time = np.arange(0, 600, 0.0004)
-    time = np.arange(0, 600, 1)
+    time = np.arange(0, 300, 1)
     sol = rungekutta4(derivative_SIR, [S_0, I_0, R_0], time, args=(beta, v))
 
-    # plt.plot(time, sol[:, 0], "black", label="S")
-    # plt.plot(time, sol[:, 1], "red", label="I")
-    # plt.plot(time, sol[:, 2], "blue", label="R")
-    # plt.legend(loc="best")
-    # plt.ylabel("Population")
-    # plt.xlabel("Time")
-    # plt.grid()
-    # plt.show()
-    # plt.clf()
+    times = [50, 70, 100, 120, 150, 180, 250]
 
-    # plt.plot(time, beta*(1/v)*sol[:, 0], "green", label="R_0")
-    # plt.ylabel("R_0")
-    # plt.xlabel("Time")
-    # plt.grid()
-    # plt.show()
+    S_data, I_data, R_data = noisy_SIR(S=sol[:, 0], I=sol[:, 1], R=sol[:, 2],
+                                       index=times,
+                                       noise=10000)
 
-    inf = inference_SIR(S=sol[:, 0], I=sol[:, 1], R=sol[:, 2])
+    inf = inference_SIR(S=S_data, I=I_data, R=R_data, t=times)
     inf.init_ode_plot()
     inf.least_squares_pred()
     inf.infer()
