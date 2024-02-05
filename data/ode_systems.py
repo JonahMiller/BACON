@@ -130,11 +130,11 @@ class inference_SIR:
         theta = self.ls_theta
         with pm.Model() as model:
             # Priors
-            beta = pm.TruncatedNormal("beta", mu=theta[0], sigma=0.000000001, lower=-100, initval=theta[0])
-            v = pm.TruncatedNormal("v", mu=theta[1], sigma=0.001, lower=-100, initval=theta[1])
-            S_0 = pm.TruncatedNormal("S_0", mu=theta[2], sigma=100, lower=0, initval=theta[2])
-            I_0 = pm.TruncatedNormal("I_0", mu=theta[3], sigma=100, lower=0, initval=theta[3])
-            R_0 = pm.TruncatedNormal("R_0", mu=theta[4], sigma=100, lower=-100, initval=theta[4])
+            beta = pm.TruncatedNormal("beta", mu=theta[0], sigma=0.00000001, lower=0, upper=1e-7, initval=theta[0])
+            v = pm.TruncatedNormal("v", mu=theta[1], sigma=0.01, lower=0, upper=0.4, initval=theta[1])
+            S_0 = pm.TruncatedNormal("S_0", mu=theta[2], sigma=100000, lower=9e6, upper=1.1e7, initval=theta[2])
+            I_0 = pm.TruncatedNormal("I_0", mu=theta[3], sigma=1000, lower=0, upper=2000, initval=theta[3])
+            R_0 = pm.TruncatedNormal("R_0", mu=theta[4], sigma=100, lower=-10, upper=1000, initval=theta[4])
             sigma = pm.HalfNormal("sigma", 10)
             # Ode solution function
             ode_solution = pytensor_forward_model_matrix(
@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
     S_data, I_data, R_data = noisy_SIR(S=sol[:, 0], I=sol[:, 1], R=sol[:, 2],
                                        index=times,
-                                       noise=10000)
+                                       noise=1000)
 
     inf = inference_SIR(S=S_data, I=I_data, R=R_data, t=times)
     inf.init_ode_plot()
