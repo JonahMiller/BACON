@@ -171,7 +171,7 @@ class inference_SIR:
         for row_idx in range(num_samples):
             self.plot_model_trace(ax, trace_df, row_idx, **plot_model_kwargs)
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles[:2], labels[:2], loc="center left", bbox_to_anchor=(1, 0.5))
+        ax.legend(handles[:6], labels[:6], loc="center left", bbox_to_anchor=(1, 0.5))
         ax.set_title(title, fontsize=16)
 
 
