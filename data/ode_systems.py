@@ -8,14 +8,14 @@ import pytensor.tensor as pt
 from pytensor.compile.ops import as_op
 
 from scipy.optimize import least_squares
+from scipy.integrate import odeint
 
 import warnings
 warnings.filterwarnings("ignore")
 
 
 def derivative_SIR(X, t, logbeta, v):
-    logS, I, R = X
-    S = 10**logS
+    S, I, R = X
     beta = 10**logbeta
     dS_dt = - beta*I*S
     dI_dt = beta*I*S - v*I
@@ -40,7 +40,7 @@ def rungekutta4(func, y0, t, args=()):
 
 def SIR(beta, v, S_0, I_0, R_0, init_time, end_time, steps):
     time = np.arange(init_time, end_time, steps)
-    sol = rungekutta4(derivative_SIR, [S_0, I_0, R_0], time, args=(beta, v))
+    sol = odeint(derivative_SIR, [S_0, I_0, R_0], time, args=(beta, v))
     return sol[:, 0], sol[:, 1], sol[:, 2]
 
 
@@ -58,19 +58,16 @@ def plot_model(ax, x_y, time, alpha=1, lw=2, title="SIR model",):
 def noisy_SIR(S, I, R, index, noise):
     S_data, I_data, R_data = [], [], []
     for i in index:
-        new_S = max(S[i] + noise*np.random.normal(0, 1), 0)
-        new_I = max(I[i] + 0*noise*np.random.normal(0, 1), 0)
-        new_R = max(R[i] + 0*noise*np.random.normal(0, 1), 0)
-        S_data.append(int(new_S))
-        I_data.append(int(new_I))
-        R_data.append(int(new_R))
+        S_data.append(S[i] + noise*np.random.normal(0, 1))
+        I_data.append(I[i])
+        R_data.append(R[i])
     return S_data, I_data, R_data
 
 
 # decorator with input and output types a Pytensor double float tensors
 @as_op(itypes=[pt.dvector], otypes=[pt.dmatrix])
 def pytensor_forward_model_matrix(theta):
-    return rungekutta4(func=derivative_SIR, y0=theta[-3:], t=[50, 70, 100, 120, 150, 180, 250], args=(*theta[:2],))
+    return odeint(func=derivative_SIR, y0=theta[-3:], t=[50, 70, 100, 120, 150, 180, 250], args=(*theta[:2],))
 
 
 # https://www.pymc.io/projects/examples/en/latest/ode_models/ODE_Lotka_Volterra_multiple_ways.html
@@ -88,19 +85,19 @@ class inference_SIR:
         ))
 
     def init_params(self):
-        logbeta, v, logS_0, I_0, R_0 = -8, 0.02, 7, 1000, 0
-        self.theta = np.array([logbeta, v, logS_0, I_0, R_0])
+        logbeta, v, S_0, I_0, R_0 = -8, 0.02, 1e7, 1000, 0
+        self.theta = np.array([logbeta, v, S_0, I_0, R_0])
 
     def init_ode_plot(self):
         self.init_params()
-        x_y = rungekutta4(func=derivative_SIR, y0=self.theta[-3:], t=self.time, args=(*self.theta[:2], ))
+        x_y = odeint(func=derivative_SIR, y0=self.theta[-3:], t=self.time, args=(*self.theta[:2], ))
         _, ax = plt.subplots()
         self.plot_data(ax, lw=0)
         plot_model(ax, x_y, self.time, title="LV model")
 
     def ode_model_resid(self, theta):
         return (
-            self.df[["S", "I", "R"]] - rungekutta4(func=derivative_SIR, y0=theta[-3:],
+            self.df[["S", "I", "R"]] - odeint(func=derivative_SIR, y0=theta[-3:],
                                                    t=self.df.step, args=(*theta[:2], ))
         ).values.flatten()
 
@@ -109,7 +106,7 @@ class inference_SIR:
         self.ls_theta = results.x
         self.return_thetas()
         self.ls_theta = self.theta
-        x_y = rungekutta4(func=derivative_SIR, y0=self.ls_theta[-3:], t=self.time, args=(*self.ls_theta[:2], ))
+        x_y = odeint(func=derivative_SIR, y0=self.ls_theta[-3:], t=self.time, args=(*self.ls_theta[:2], ))
         fig, ax = plt.subplots()
         self.plot_data(ax, lw=0)
         plot_model(ax, x_y, self.time, title="Least squares SIR model")
@@ -133,16 +130,16 @@ class inference_SIR:
         theta = self.ls_theta
         with pm.Model() as model:
             # Priors
-            logbeta = pm.TruncatedNormal("logbeta", mu=theta[0], sigma=1, lower=-8.5, upper=-7.5, initval=theta[0])
+            logbeta = pm.TruncatedNormal("logbeta", mu=theta[0], sigma=0.1, lower=-8.5, upper=-7.5, initval=theta[0])
             # v = pm.TruncatedNormal("v", mu=theta[1], sigma=0.01, lower=0, upper=0.4, initval=theta[1])
-            logS_0 = pm.TruncatedNormal("logS_0", mu=theta[2], sigma=100000, lower=9e6, upper=1.1e7, initval=theta[2])
+            S_0 = pm.LogNormal("S_0", mu=np.log(theta[2]), sigma=0.01, initval=np.log(theta[2]))
             # I_0 = pm.TruncatedNormal("I_0", mu=theta[3], sigma=1000, lower=0, upper=2000, initval=theta[3])
             # R_0 = pm.TruncatedNormal("R_0", mu=theta[4], sigma=100, lower=-10, upper=1000, initval=theta[4])
 
-            sigma = pm.HalfNormal("sigma", 10)
+            sigma = pm.HalfNormal("sigma", 5)
             # Ode solution function
             ode_solution = pytensor_forward_model_matrix(
-                pm.math.stack([logbeta, v, logS_0, I_0, R_0])
+                pm.math.stack([logbeta, v, S_0, I_0, R_0])
                 )
             # Likelihood
             pm.Normal("Y_obs", mu=ode_solution, sigma=sigma, observed=self.df[["S", "I", "R"]].values)
@@ -162,11 +159,11 @@ class inference_SIR:
                             title=f"Data and Inference Model Runs\n{sampler} Sampler")
 
     def plot_model_trace(self, ax, trace_df, row_idx, lw=1, alpha=0.2):
-        # cols = ["logbeta", "v", "logS_0", "I_0", "R_0"]
-        cols = ["logbeta", "logS_0"]
+        # cols = ["logbeta", "v", "S_0", "I_0", "R_0"]
+        cols = ["logbeta", "S_0"]
         row = trace_df.iloc[row_idx, :][cols].values
         theta = [row[0], v, row[1], I_0, R_0]
-        x_y = rungekutta4(func=derivative_SIR, y0=theta[-3:], t=self.time, args=(*theta[:2],))
+        x_y = odeint(func=derivative_SIR, y0=theta[-3:], t=self.time, args=(*theta[:2],))
         plot_model(ax, x_y, time=self.time, lw=lw, alpha=alpha)
 
     def plot_inference(self, ax, trace, num_samples=25,
@@ -188,13 +185,13 @@ if __name__ == "__main__":
     R_0 = 0
 
     time = np.arange(0, 300, 1)
-    sol = rungekutta4(derivative_SIR, [S_0, I_0, R_0], time, args=(logbeta, v))
+    sol = odeint(derivative_SIR, [S_0, I_0, R_0], time, args=(logbeta, v))
 
     times = [50, 70, 100, 120, 150, 180, 250]
 
     S_data, I_data, R_data = noisy_SIR(S=sol[:, 0], I=sol[:, 1], R=sol[:, 2],
                                        index=times,
-                                       noise=10000)
+                                       noise=100000)
 
     inf = inference_SIR(S=S_data, I=I_data, R=R_data, t=times)
     inf.init_ode_plot()
