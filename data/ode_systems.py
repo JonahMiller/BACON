@@ -58,7 +58,7 @@ def plot_model(ax, x_y, time, alpha=1, lw=2, title="SIR model",):
 def noisy_SIR(S, I, R, index, noise):
     S_data, I_data, R_data = [], [], []
     for i in index:
-        S_data.append(S[i] + noise*np.random.normal(0, 1))
+        S_data.append(S[i] + noise*abs(np.random.normal(0, 1)))
         I_data.append(I[i])
         R_data.append(R[i])
     return S_data, I_data, R_data
@@ -85,7 +85,7 @@ class inference_SIR:
         ))
 
     def init_params(self):
-        logbeta, v, S_0, I_0, R_0 = -8, 0.02, 1e7, 1000, 0
+        logbeta, v, S_0, I_0, R_0 = -8, 0.02, 1.1e7, 1000, 0
         self.theta = np.array([logbeta, v, S_0, I_0, R_0])
 
     def init_ode_plot(self):
@@ -98,7 +98,7 @@ class inference_SIR:
     def ode_model_resid(self, theta):
         return (
             self.df[["S", "I", "R"]] - odeint(func=derivative_SIR, y0=theta[-3:],
-                                                   t=self.df.step, args=(*theta[:2], ))
+                                              t=self.df.step, args=(*theta[:2], ))
         ).values.flatten()
 
     def least_squares_pred(self):
@@ -132,7 +132,7 @@ class inference_SIR:
             # Priors
             logbeta = pm.TruncatedNormal("logbeta", mu=theta[0], sigma=0.1, lower=-8.5, upper=-7.5, initval=theta[0])
             # v = pm.TruncatedNormal("v", mu=theta[1], sigma=0.01, lower=0, upper=0.4, initval=theta[1])
-            S_0 = pm.LogNormal("S_0", mu=np.log(theta[2]), sigma=0.01, initval=np.log(theta[2]))
+            S_0 = pm.LogNormal("S_0", mu=np.log(theta[2]), sigma=0.1, initval=np.log(theta[2]))
             # I_0 = pm.TruncatedNormal("I_0", mu=theta[3], sigma=1000, lower=0, upper=2000, initval=theta[3])
             # R_0 = pm.TruncatedNormal("R_0", mu=theta[4], sigma=100, lower=-10, upper=1000, initval=theta[4])
 
@@ -180,7 +180,7 @@ class inference_SIR:
 if __name__ == "__main__":
     logbeta = -8
     v = 0.02
-    S_0 = 1e7
+    S_0 = 1.1e7
     I_0 = 1000
     R_0 = 0
 
