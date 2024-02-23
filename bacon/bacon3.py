@@ -146,6 +146,7 @@ class BACON_3:
                     print(f"         displayed fix variables {[df.columns[-1] for df in new_df]}.")
 
             self.dfs = new_dfs
+            self.print_dfs()
 
         constants = []
         for df in self.dfs:
@@ -176,7 +177,6 @@ class BACON_3:
         eqn = bl.simplify_eqns(self.initial_df, const_eqns, key_var).iterate_through_dummys()
         loss = bl.loss_calc(self.initial_df, eqn).loss()
         print(f"Final form is {eqn.rhs} = {eqn.lhs} with loss {loss}.")
-
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
     def not_last_iteration(self):

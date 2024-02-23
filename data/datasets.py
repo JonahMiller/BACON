@@ -57,6 +57,22 @@ def ideal_gas(noise=0):
     return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
 
 
+def ideal_gas2(noise=0):
+    M = np.array(9*[1] + 9*[2] + 9*[3])
+    T = np.array(3*(3*[10] + 3*[20] + 3*[30]))
+    P = np.array(3*(3*([10, 20, 30])))
+    V = M*(2*P - M)/T + noise*np.random.normal(0, 1, 27)
+    return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
+
+
+def bacon5(noise=0):
+    M = np.array(9*[1] + 9*[2] + 9*[3])
+    T = np.array(3*(3*[10] + 3*[20] + 3*[30]))
+    P = np.array(3*(3*([10, 20, 30])))
+    V = M*T/P + noise*np.random.normal(0, 1, 27)
+    return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
+
+
 def ohm_large(noise=0):
     v = 2
     r = 3
@@ -98,8 +114,9 @@ def allowed_data():
             "combine_ohm": combine_ohm,
             "ohm_real": ohm_real,
             "ohm_large": ohm_large,
-            "ideal_gas": ideal_gas,
+            "ideal_gas": ideal_gas2,
             "black": black,
-            "sir": sir
+            "sir": sir,
+            "bacon5": bacon5
            }
     return data
