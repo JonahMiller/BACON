@@ -25,6 +25,28 @@ def run_bacon_1(df, col_1, col_2, verbose=False):
     return bacon_1_instance.bacon_iterations()
 
 
+class BACON_5_dummy:
+    """
+    When a dummy variable is found, it needs to be traced up the chain to find its
+    relationship with previous independent variables before being replaced below.
+    """
+    def __init__(self, df, dummy_var, bacon_1_info=False, bacon_5_info=False):
+        self.df = df
+        self.dummy_var = dummy_var
+        self.bacon_1_info = bacon_1_info
+        self.bacon_5_info = bacon_5_info
+
+    def run_bacon_5_from_dummy(self):
+        """
+        Runs BACON_5 up the dummy chain to solve the variable
+        """
+        bacon_5_instance = BACON_5(self.df, bacon_1_info=self.bacon_1_info, bacon_5_info=self.bacon_5_info)
+        bacon_5_instance.bacon_iterations()
+
+    def return_dummy_relation(self):
+        ...
+
+
 class BACON_5:
     """
     BACON.5 assumes symmetry in the relationship to narrow down the processing time.
@@ -51,6 +73,9 @@ class BACON_5:
         new_col = np.array([(f(tuple(val))) for val in self.initial_df[list(vars)].to_numpy().tolist()])
         return pd.DataFrame({eqn: new_col})
 
+    def solve_for_dummy(self):
+        ...
+
     def bacon_iterations(self):
         """
         Manages the iterations over all the layers in a for loop until each dataframe
@@ -67,17 +92,16 @@ class BACON_5:
 
                 # Special check for linear relationship added to dataframe
                 if isinstance(results[2], list):
-
-                    
-                    current_data = pd.DataFrame({results[2][2]: results[0],
-                                                results[2][1]: results[2][3]}, index=indecies)
-                    new_cols = pd.concat([new_cols, current_data])
+                    dummy_instance = BACON_5_dummy(df, results[2][1])
+                    dummy_val = dummy_instance.return_dummy_relation()
+                    new_symbol = self.solve_for_dummy(results[2][2], dummy_val)
                 else:
                     # Save results as new column for dataframe with correct indecies
                     new_symbol = results[1]
-                    new_col = self.new_df_col(new_symbol)
-                    df = df.iloc[:, :-2].join(new_col)
-                    new_dfs.append(df)
+
+                new_col = self.new_df_col(new_symbol)
+                df = df.iloc[:, :-2].join(new_col)
+                new_dfs.append(df)
 
             self.dfs = new_dfs
 
