@@ -146,7 +146,6 @@ class BACON_3:
                     print(f"         displayed fix variables {[df.columns[-1] for df in new_df]}.")
 
             self.dfs = new_dfs
-            self.print_dfs()
 
         constants = []
         for df in self.dfs:
