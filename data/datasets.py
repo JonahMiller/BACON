@@ -1,7 +1,7 @@
 import numpy as np
 import sympy as sym
 
-from data.ode_systems import SIR
+# from data.ode_systems import SIR
 
 
 def kepler(noise=0):

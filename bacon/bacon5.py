@@ -46,8 +46,8 @@ class BACON_5:
         '''
         self.new_init_df = pd.DataFrame(self.initial_df, index=[0, 1, 2, 3, 6, 9, 18])
         self.dfs = [self.new_init_df]
-        # self.backup_df = pd.DataFrame(self.initial_df, index=[4, 7, 10, 19])
-        self.backup_df = pd.DataFrame(self.initial_df, index=[14, 21])
+        self.backup_df = pd.DataFrame(self.initial_df, index=[4, 7, 10, 19])
+        # self.backup_df = pd.DataFrame(self.initial_df, index=[14, 21])
 
     def get_smaller_df(self, df):
         """
