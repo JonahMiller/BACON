@@ -1,9 +1,11 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 
+import matplotlib.pyplot as plt
+
 
 def gen_meshgrid():
-    beta = (np.linspace(-8.5, -7.5, 10))
+    beta = (np.linspace(0.85, 0.95, 10))
     S_0 = (np.linspace(6.75, 7.25, 10))
     nu = np.linspace(0.15, 0.25, 10)
     X1, X2, X3 = np.meshgrid(beta, S_0, nu)
@@ -12,7 +14,7 @@ def gen_meshgrid():
 
 
 def gen_data(samples, beta_noise=0, S_0_noise=0, nu_noise=0):
-    beta = np.random.normal(-8, beta_noise, samples)
+    beta = np.random.normal(0.9, beta_noise, samples)
     S_0 = np.random.normal(7, S_0_noise, samples)
     nu = np.random.normal(0.2, nu_noise, samples)
     R_0 = beta*S_0/nu
@@ -58,5 +60,15 @@ if __name__ == "__main__":
     gp = gp_pred(X_train, X_real, y_real, 1, 0.1)
     ave_vals = gp.main()
 
-    for a, b in zip(ave_vals, X_train):
-        print(a, b)
+    # plt.hist(y_real, bins=10)
+    # plt.show()
+
+    # for a, b in zip(ave_vals, X_train):
+    #     print(a, b)
+
+    plt.hist(ave_vals, bins=10)
+    plt.show()
+
+    plt.hist(X_train.T[0], bins=10)
+    plt.show()
+    

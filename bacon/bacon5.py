@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from statistics import fmean
-from sympy import Eq, lambdify,  Symbol
+from sympy import Eq, lambdify,  Symbol, simplify
 
 from bacon.bacon1 import BACON_1
 import bacon.losses as bl
@@ -44,10 +44,10 @@ class BACON_5:
 
         TODO: Use maching learning here.
         '''
-        self.new_init_df = pd.DataFrame(self.initial_df, index=[0, 1, 2, 3, 6, 9, 18])
-        self.dfs = [self.new_init_df]
-        self.backup_df = pd.DataFrame(self.initial_df, index=[4, 7, 10, 19])
-        # self.backup_df = pd.DataFrame(self.initial_df, index=[14, 21])
+        init_df = pd.DataFrame(self.initial_df, index=[0, 1, 2, 4, 8, 13, 26])
+        # backup_df = pd.DataFrame(self.initial_df, index=[3, 7, 15, 23])
+        backup_df = pd.DataFrame(self.initial_df, index=[3, 7, 14, 25])
+        self.dfs = [{"df": init_df, "backup_df": backup_df}]
 
     def get_smaller_df(self, df):
         """
@@ -58,17 +58,14 @@ class BACON_5:
             df = df.loc[df[var] == min(df[var].unique())]
         return df.drop_duplicates(df.columns.tolist()[:-1])
 
-    def condense_dfs(self):
-        """
-        Removes duplicate values from the dataframes.
-        """
-        self.dfs = [df.drop_duplicates() for df in self.dfs]
-
     def new_df_col(self, expr, current_df):
         """
         Creates a new dataframe column based on expression found by smaller df.
         Notation fixes to allow expressions to be substituted.
         """
+        # Simplify column names deterministically for sympy to detect equations
+        current_df.columns = [*current_df.columns[:-1], simplify(current_df.columns.tolist()[-1])]
+
         indices = current_df.index.values
         for col_name in current_df.columns.tolist():
             if len(col_name.free_symbols) > 1:
@@ -83,6 +80,22 @@ class BACON_5:
         new_col = np.array([(f(tuple(val))) for val in temp_df[list(vars)].to_numpy().tolist()])
         return pd.DataFrame({expr: new_col}, index=indices)
 
+    def update_df_with_single_expr(self, expression, df):
+        """
+        Removes last 2 columns of df and replace with expression replacing
+        these 2 columns.
+        """
+        new_col = self.new_df_col(expression, df)
+        df = df.iloc[:, :-2].join(new_col)
+        return df
+
+    def update_df_with_multiple_expr(self, expression1, expression2, df):
+        new_col_1 = self.new_df_col(expression1, df)
+        new_col_2 = df.loc[:, [expression2]]
+        new_cols = new_col_1.join(new_col_2)
+        df = df.iloc[:, :-2].join(new_cols)
+        return df
+
     def bacon_iterations(self):
         """
         Manages the iterations over all the layers in a for loop until each dataframe
@@ -92,10 +105,14 @@ class BACON_5:
         while self.not_last_iteration():
             new_dfs = []
             self.check_const_col()
-            for df in self.dfs:
+            for dfs in self.dfs:
+                df = dfs["df"]
+                backup_df = dfs["backup_df"]
+
                 small_df = self.get_smaller_df(df)
                 indecies = small_df.index.values
 
+                print(small_df)
                 results = run_bacon_1(small_df, small_df.columns[-1], small_df.columns[-2],
                                       verbose=self.bacon_1_info)
 
@@ -104,30 +121,42 @@ class BACON_5:
                     small_dummy_df = pd.DataFrame({results[2][1]: results[2][3]}, index=indecies)
                     small_expr_df = pd.DataFrame({results[2][2]: results[0]})
 
-                    extra_vals_df = df.drop(index=list(indecies))
-                    dummy_col, expr_col = self.get_linear_values(extra_vals_df, results[2][1], results[2][2])
+                    extra_vals_df = df.drop(index=indecies)
 
-                    new_dfs.append(df.iloc[:, :-2].join(pd.concat((small_dummy_df, dummy_col))))
-                    new_dfs.append(df.iloc[:, :-2].join(pd.concat((small_expr_df, expr_col))))
+                    extra_vals_df = self.update_df_with_multiple_expr(results[2][4], results[2][5], extra_vals_df)
+                    backup_df = self.update_df_with_multiple_expr(results[2][4], results[2][5], backup_df)
+
+                    dummy_col, expr_col = self.get_linear_values(extra_vals_df, backup_df,
+                                                                 results[2][1], results[2][2])
+
+                    n_df1 = df.iloc[:, :-2].join(pd.concat((small_dummy_df, dummy_col)))
+                    b_df1 = backup_df.iloc[:, :-2].join(dummy_col.set_index(backup_df.index.copy()))
+
+                    n_df2 = df.iloc[:, :-2].join(pd.concat((small_expr_df, expr_col)))
+                    b_df2 = backup_df.iloc[:, :-2].join(expr_col.set_index(backup_df.index.copy()))
+
+                    new_dfs.append({"df": n_df1.drop(index=indecies[1:]),
+                                    "backup_df": b_df1.iloc[2:, :]})
+                    new_dfs.append({"df": n_df2.drop(index=indecies[1:]),
+                                    "backup_df": b_df2.iloc[2:, :]})
+
                 else:
                     # Save results as new column for dataframe with correct indecies
                     new_expression = results[1]
-                    new_col = self.new_df_col(new_expression, df)
-                    df = df.iloc[:, :-2].join(new_col)
-                    new_dfs.append(df)
+                    df = self.update_df_with_single_expr(new_expression, df)
 
-                    # Update backup df
-                    new_col = self.new_df_col(new_expression, self.backup_df)
-                    self.backup_df = self.backup_df.iloc[:, :-2].join(new_col)
+                    # Update backup dfs
+                    backup_df = self.update_df_with_single_expr(new_expression, backup_df)
+
+                    new_dfs.append({"df": df.drop(index=indecies[1:]),
+                                    "backup_df": backup_df.iloc[2:, :]})
 
             self.dfs = new_dfs
-            self.condense_dfs()
 
         constants = []
-        for df in self.dfs:
-            df = df.drop_duplicates(df.columns.tolist()[:-1])
-            print(df)
+        for dfs in self.dfs:
             # When only 2 columns left do simple Bacon 1
+            df = dfs["df"]
 
             if self.bacon_5_info:
                 print(f"BACON 5: Running BACON 1 on final variables [{df.columns[0]}, {df.columns[1]}]")
@@ -141,18 +170,20 @@ class BACON_5:
 
         self.bacon_losses()
 
-    def get_linear_values(self, df, dummy_sym, expr_sym):
+    def get_linear_values(self, df, backup_df, dummy_sym, expr_sym):
         """
         Uses a backup dataframe to find values for linear relationships.
         """
         indecies = df.index.values
+
         data1 = [[v1, v2] for v1, v2 in zip(df.iloc[:, -1].values.tolist(),
-                                            self.backup_df.iloc[:, -1].values.tolist())]
+                                            backup_df.iloc[:, -1].values.tolist())]
         data2 = [[v1, v2] for v1, v2 in zip(df.iloc[:, -2].values.tolist(),
-                                            self.backup_df.iloc[:, -2].values.tolist())]
+                                            backup_df.iloc[:, -2].values.tolist())]
+
         expr_data, dummy_data = [], []
-        for p1, p2 in zip(data1, data2):
-            m, c = np.polyfit(p1, p2, 1)
+        for x, y in zip(data1, data2):
+            m, c = np.polyfit(x, y, 1)
             dummy_data.append(m)
             expr_data.append(c)
         return pd.DataFrame({dummy_sym: dummy_data}, index=indecies), \
@@ -160,13 +191,14 @@ class BACON_5:
 
     def not_last_iteration(self):
         for df in self.dfs:
-            if len(df.columns) > 2:
+            if len(df["df"].columns) > 2:
                 return True
         return False
 
     def print_dfs(self):
         for df in self.dfs:
-            print(df)
+            print(df["df"])
+            print(df["backup_df"])
 
     def check_const_col(self):
         """
@@ -175,7 +207,7 @@ class BACON_5:
         put in different orders.
         """
         for i, df in enumerate(list(self.dfs)):
-            temp_dict = df.to_dict("list")
+            temp_dict = df["df"].to_dict("list")
             for idx, val in temp_dict.items():
                 mean = fmean(val)
                 M = abs(mean)

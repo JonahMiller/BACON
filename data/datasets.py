@@ -4,6 +4,8 @@ import sympy as sym
 # from data.ode_systems import SIR
 
 
+# FUNCTIONS FOR BACON.1
+
 def kepler(noise=0):
     n = np.arange(1, 11)
     P = np.power(n, 3)
@@ -18,7 +20,9 @@ def boyle(noise=0):
     return [P, V], [sym.Symbol("P"), sym.Symbol("V")]
 
 
-def ideal_gas(noise=0):
+# FUNCTIONS FOR BACON.3/5:
+
+def ideal(noise=0):
     a = 2
     b = 3
     M = np.array(9*[1] + 9*[2] + 9*[3])
@@ -28,15 +32,7 @@ def ideal_gas(noise=0):
     return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
 
 
-def ideal_gas2(noise=0):
-    M = np.array(9*[1] + 9*[2] + 9*[3])
-    T = np.array(3*(3*[10] + 3*[20] + 3*[30]))
-    P = np.array(3*(3*([10, 20, 30])))
-    V = M*(2*P - M)/T + noise*np.random.normal(0, 1, 27)
-    return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
-
-
-def ohm_large(noise=0):
+def ohm(noise=0):
     v = 2
     r = 3
     T = np.array(9*[100] + 9*[120] + 9*[140])
@@ -58,24 +54,23 @@ def black(noise=0):
            [sym.Symbol("M_1"), sym.Symbol("M_2"), sym.Symbol("T_1"), sym.Symbol("T_2"), sym.Symbol("T_f")]
 
 
-def sir(noise=0):
-    beta = 1e-8
-    v = 0.02
-    S_0 = 1e7
-    I_0 = 1000
-    R_0 = 0
-    S, I, R = SIR(beta, v, S_0, I_0, R_0, 0, 600, 0.004)
-    return [S, I, R], [sym.Symbol("S"), sym.Symbol("I"), sym.Symbol("R")]
+# def sir(noise=0):
+#     beta = 1e-8
+#     v = 0.02
+#     S_0 = 1e7
+#     I_0 = 1000
+#     R_0 = 0
+#     S, I, R = SIR(beta, v, S_0, I_0, R_0, 0, 600, 0.004)
+#     return [S, I, R], [sym.Symbol("S"), sym.Symbol("I"), sym.Symbol("R")]
 
 
 def allowed_data():
     data = {
             "kepler": kepler,
             "boyle": boyle,
-            "ohm_large": ohm_large,
-            "ideal_gas": ideal_gas,
-            "ideal_gas2": ideal_gas2,
-            "black": black,
-            "sir": sir
+            "ohm": ohm,
+            "ideal": ideal,
+            "black": black
+            # "sir": sir
            }
     return data

@@ -1,13 +1,13 @@
 import datasets
 from gp import gp_pred
 
-import sys
-sys.path.append("..")
-from bacon.bacon5 import BACON_5
-
 import pandas as pd
 import numpy as np
 from itertools import product
+
+import sys
+sys.path.append("..")
+from bacon.bacon5 import BACON_5
 
 
 class fix_df:
@@ -76,12 +76,15 @@ class fix_df:
 
 
 if __name__ == "__main__":
-    data_func = datasets.allowed_data()["ideal_gas2"]
+    data_func = datasets.allowed_data()["ideal"]
     var, data = data_func(noise=0)
     df1 = pd.DataFrame({v: d for v, d in zip(data, var)})
 
-    fix = fix_df(df1.sample(n=20), 20000, 10)
+    sample = df1.sample(n=20)
+
+    fix = fix_df(sample, 20000, 10)
     df = fix.fix_df_process()
+
     print(df)
     print(df1)
 

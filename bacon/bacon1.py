@@ -130,10 +130,10 @@ class BACON_1:
         self.data.append(data_2 - m*data_1)
         self.update = "linear"
         k = self.new_symbol()
-        self.lin_data = ["linear", k, symbol_2 - k*symbol_1, m]
+        self.lin_data = ["linear", k, symbol_2 - k*symbol_1, m, symbol_2, symbol_1]
         if self.info:
             print(f"BACON 1: {symbol_2} is linearly prop. to {symbol_1},")
-            print(f"we then see {self.symbols[-1]} is constant")
+            print(f"         we then see {self.symbols[-1]} is constant")
 
     def product(self, symbol_1, symbol_2, data_1, data_2):
         '''
@@ -144,7 +144,7 @@ class BACON_1:
         self.update = "product"
         if self.info:
             print(f"BACON 1: {symbol_1} increases whilst {symbol_2} decreases,")
-            print(f"considering new variable {sym.simplify(symbol_1*symbol_2)}")
+            print(f"         considering new variable {sym.simplify(symbol_1*symbol_2)}")
 
     def division(self, symbol_1, symbol_2, data_1, data_2):
         '''
@@ -155,4 +155,4 @@ class BACON_1:
         self.update = "division"
         if self.info:
             print(f"BACON 1: {symbol_1} increases whilst {symbol_2} increases,")
-            print(f"considering new variable {sym.simplify(symbol_1/symbol_2)}")
+            print(f"         considering new variable {sym.simplify(symbol_1/symbol_2)}")
