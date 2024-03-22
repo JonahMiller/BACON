@@ -45,8 +45,8 @@ class BACON_5:
         TODO: Use maching learning here.
         '''
         init_df = pd.DataFrame(self.initial_df, index=[0, 1, 2, 4, 8, 13, 26])
-        # backup_df = pd.DataFrame(self.initial_df, index=[3, 7, 15, 23])
-        backup_df = pd.DataFrame(self.initial_df, index=[3, 7, 14, 25])
+        backup_df = pd.DataFrame(self.initial_df, index=[3, 7, 15, 23])
+        # backup_df = pd.DataFrame(self.initial_df, index=[3, 7, 14, 25])
         self.dfs = [{"df": init_df, "backup_df": backup_df}]
 
     def get_smaller_df(self, df):
@@ -63,14 +63,14 @@ class BACON_5:
         Creates a new dataframe column based on expression found by smaller df.
         Notation fixes to allow expressions to be substituted.
         """
-        # Simplify column names deterministically for sympy to detect equations
+        # Simplify column names deterministically for sympy to detect equivalent equations
         current_df.columns = [*current_df.columns[:-1], simplify(current_df.columns.tolist()[-1])]
 
         indices = current_df.index.values
         for col_name in current_df.columns.tolist():
             if len(col_name.free_symbols) > 1:
-                temp_df = current_df.rename(columns={col_name: Symbol("d")})
-                new_expr = expr.subs(col_name, Symbol("d"))
+                temp_df = current_df.rename(columns={col_name: Symbol("z")})
+                new_expr = expr.subs(col_name, Symbol("z"))
             else:
                 new_expr = expr
                 temp_df = current_df
@@ -112,7 +112,6 @@ class BACON_5:
                 small_df = self.get_smaller_df(df)
                 indecies = small_df.index.values
 
-                print(small_df)
                 results = run_bacon_1(small_df, small_df.columns[-1], small_df.columns[-2],
                                       verbose=self.bacon_1_info)
 
