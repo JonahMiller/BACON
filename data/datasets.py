@@ -22,6 +22,14 @@ def boyle(noise=0):
 
 # FUNCTIONS FOR BACON.3/5:
 
+def basic(noise=0):
+    M = np.array(9*[1] + 9*[2] + 9*[3])
+    T = np.array(3*(3*[10] + 3*[20] + 3*[30]))
+    P = np.array(3*(3*([10, 20, 30])))
+    V = 3*M*T/P + noise*np.random.normal(0, 1, 27)
+    return [M, T, P, V], [sym.Symbol("M"), sym.Symbol("T"), sym.Symbol("P"), sym.Symbol("V")]
+
+
 def ideal(noise=0):
     a = 2
     b = 3
@@ -66,6 +74,7 @@ def black(noise=0):
 
 def allowed_data():
     data = {
+            "basic": basic,
             "kepler": kepler,
             "boyle": boyle,
             "ohm": ohm,

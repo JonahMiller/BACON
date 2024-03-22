@@ -6,7 +6,7 @@ import data.datasets as data
 
 from bacon.bacon3 import BACON_3
 from bacon.bacon4 import BACON_4
-from bacon.bacon5 import BACON_5
+from bacon.bacon5_cp import BACON_5
 
 import warnings
 warnings.filterwarnings("ignore")
