@@ -2,9 +2,15 @@ import pandas as pd
 import numpy as np
 from statistics import fmean
 from sympy import Eq, lambdify,  Symbol, simplify
+from itertools import islice
 
 from bacon.bacon1 import BACON_1
 import bacon.losses as bl
+
+
+def chunk(it, size):
+    it = iter(it)
+    return iter(lambda: tuple(islice(it, size)), ())
 
 
 def run_bacon_1(df, col_1, col_2, verbose=False):
@@ -37,6 +43,8 @@ class BACON_5:
         self.bacon_1_info = bacon_1_info
         self.bacon_5_info = bacon_5_info
         self.eqns = []
+        self.found_exprs = []
+        self.iteration_level = 1
 
     def dataframe_manager(self):
         '''
@@ -44,10 +52,9 @@ class BACON_5:
 
         TODO: Use maching learning here.
         '''
-        init_df = pd.DataFrame(self.initial_df, index=[0, 1, 2, 4, 8, 13, 26])
-        backup_df = pd.DataFrame(self.initial_df, index=[3, 7, 15, 23])
-        # backup_df = pd.DataFrame(self.initial_df, index=[3, 7, 14, 25])
-        self.dfs = [{"df": init_df, "backup_df": backup_df}]
+        # init_df = pd.DataFrame(self.initial_df, index=[0, 1, 2, 4, 8, 13, 26, 40, 80])
+        init_df = pd.DataFrame(self.initial_df, index=[3, 4, 5, 0, 8, 13, 26])
+        self.dfs = [init_df]
 
     def get_smaller_df(self, df):
         """
@@ -96,6 +103,70 @@ class BACON_5:
         df = df.iloc[:, :-2].join(new_cols)
         return df
 
+    def generate_backup_df(self, df_idx, iteration_level):
+        indecies = []
+        init_idx = len(self.initial_df.index.values)
+
+        groups = list(chunk(range(init_idx), 3))
+
+        if iteration_level == 1:
+            for idx in df_idx:
+                for group in groups:
+                    if idx in group:
+                        lgroup = list(group)
+                        lgroup.remove(idx)
+                        indecies.append(min(lgroup))
+
+        elif iteration_level == 2:
+            groups = list(chunk(groups, 3))
+            for idx in df_idx:
+                for group in groups:
+                    if idx in list(sum(group, ())):
+                        for grou in group:
+                            if idx in grou:
+                                lgroup = list(group)
+                                lgroup.remove(grou)
+                                indecies.append(min(list(sum(lgroup, ()))))
+
+        elif iteration_level == 3:
+            groups = list(chunk(groups, 9))
+            for idx in df_idx:
+                for group in groups:
+                    if idx in list(sum(group, ())):
+                        for grou in group:
+                            if idx in grou:
+                                lgroup = list(group)
+                                lgroup.remove(grou)
+                                indecies.append(min(list(sum(lgroup, ()))))
+
+        backup_df = pd.DataFrame(self.initial_df, index=indecies)
+        return backup_df
+
+    def update_backup_df(self, backup_df, found_exprs, df_count):
+        exprs = [expr for expr in found_exprs if expr[-1] == df_count]
+        if exprs:
+            for expr in exprs:
+                if len(expr) == 3:
+                    backup_df = self.update_df_with_single_expr(expr[0], backup_df)
+                elif len(expr) == 6:
+                    backup_backup_df = self.generate_backup_df(backup_df.index.values, expr[4])
+                    backup_backup_df = self.update_df_with_multiple_expr(expr[2], expr[3], backup_backup_df)
+                    backup_df = self.update_df_with_multiple_expr(expr[2], expr[3], backup_df)
+                    dummy_col, expr_col = self.get_linear_values(backup_df, backup_backup_df,
+                                                                 expr[0], expr[1])
+
+                    b_df1 = backup_df.iloc[:, :-2].join(dummy_col)
+                    b_df2 = backup_df.iloc[:, :-2].join(expr_col)
+
+                    if df_count == 0:
+                        backup_df = b_df1
+                    elif df_count == 1:
+                        backup_df = b_df2
+                    else:
+                        raise Exception
+
+        return backup_df
+
     def bacon_iterations(self):
         """
         Manages the iterations over all the layers in a for loop until each dataframe
@@ -105,11 +176,13 @@ class BACON_5:
         while self.not_last_iteration():
             new_dfs = []
             self.check_const_col()
-            for dfs in self.dfs:
-                df = dfs["df"]
-                backup_df = dfs["backup_df"]
 
-                small_df = self.get_smaller_df(df)
+            df_count = 0
+            for df in self.dfs:
+                print(df)
+
+                # small_df = self.get_smaller_df(df)
+                small_df = df.iloc[:3, :]
                 indecies = small_df.index.values
 
                 results = run_bacon_1(small_df, small_df.columns[-1], small_df.columns[-2],
@@ -122,6 +195,9 @@ class BACON_5:
 
                     extra_vals_df = df.drop(index=indecies)
 
+                    backup_df = self.generate_backup_df(extra_vals_df.index.values, self.iteration_level)
+                    backup_df = self.update_backup_df(backup_df, self.found_exprs, df_count)
+
                     extra_vals_df = self.update_df_with_multiple_expr(results[2][4], results[2][5], extra_vals_df)
                     backup_df = self.update_df_with_multiple_expr(results[2][4], results[2][5], backup_df)
 
@@ -129,33 +205,36 @@ class BACON_5:
                                                                  results[2][1], results[2][2])
 
                     n_df1 = df.iloc[:, :-2].join(pd.concat((small_dummy_df, dummy_col)))
-                    b_df1 = backup_df.iloc[:, :-2].join(dummy_col.set_index(backup_df.index.copy()))
-
                     n_df2 = df.iloc[:, :-2].join(pd.concat((small_expr_df, expr_col)))
-                    b_df2 = backup_df.iloc[:, :-2].join(expr_col.set_index(backup_df.index.copy()))
 
-                    new_dfs.append({"df": n_df1.drop(index=indecies[1:]),
-                                    "backup_df": b_df1.iloc[2:, :]})
-                    new_dfs.append({"df": n_df2.drop(index=indecies[1:]),
-                                    "backup_df": b_df2.iloc[2:, :]})
+                    new_dfs.append(n_df1.drop(index=indecies[1:]))
+                    new_dfs.append(n_df2.drop(index=indecies[1:]))
+
+                    self.found_exprs.append([results[2][1], results[2][2],
+                                             results[2][4], results[2][5],
+                                             self.iteration_level,
+                                             df_count])
 
                 else:
                     # Save results as new column for dataframe with correct indecies
                     new_expression = results[1]
                     df = self.update_df_with_single_expr(new_expression, df)
+                    self.found_exprs.append([new_expression,
+                                             self.iteration_level,
+                                             df_count])
 
                     # Update backup dfs
-                    backup_df = self.update_df_with_single_expr(new_expression, backup_df)
+                    # backup_df = self.update_df_with_single_expr(new_expression, backup_df)
 
-                    new_dfs.append({"df": df.drop(index=indecies[1:]),
-                                    "backup_df": backup_df.iloc[2:, :]})
+                    new_dfs.append(df.drop(index=indecies[1:]))
+                df_count += 1
 
+            self.iteration_level += 1
             self.dfs = new_dfs
 
         constants = []
-        for dfs in self.dfs:
+        for df in self.dfs:
             # When only 2 columns left do simple Bacon 1
-            df = dfs["df"]
 
             if self.bacon_5_info:
                 print(f"BACON 5: Running BACON 1 on final variables [{df.columns[0]}, {df.columns[1]}]")
@@ -190,14 +269,13 @@ class BACON_5:
 
     def not_last_iteration(self):
         for df in self.dfs:
-            if len(df["df"].columns) > 2:
+            if len(df.columns) > 2:
                 return True
         return False
 
     def print_dfs(self):
         for df in self.dfs:
-            print(df["df"])
-            print(df["backup_df"])
+            print(df)
 
     def check_const_col(self):
         """
@@ -206,7 +284,7 @@ class BACON_5:
         put in different orders.
         """
         for i, df in enumerate(list(self.dfs)):
-            temp_dict = df["df"].to_dict("list")
+            temp_dict = df.to_dict("list")
             for idx, val in temp_dict.items():
                 mean = fmean(val)
                 M = abs(mean)
