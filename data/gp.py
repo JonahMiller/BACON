@@ -1,25 +1,28 @@
 import numpy as np
+import jax as jnp
 from scipy.spatial.distance import cdist
 
-import matplotlib.pyplot as plt
+
+def rbf_kernel(x1, x2, length, var):
+    if x2 is None:
+        return var*np.exp(-np.power(cdist(x1, x1), 2)/length)
+    else:
+        return var*np.exp(-np.power(cdist(x1, x2), 2)/length)
 
 
-def gen_meshgrid():
-    beta = (np.linspace(0.85, 0.95, 10))
-    S_0 = (np.linspace(6.75, 7.25, 10))
-    nu = np.linspace(0.15, 0.25, 10)
-    X1, X2, X3 = np.meshgrid(beta, S_0, nu)
-    X = np.stack((X1.flatten(), X2.flatten(), X3.flatten()), axis=-1)
-    return X
+def white_kernel(x1, x2, var):
+    if x2 is None:
+        return var*np.eye(x1.shape[0])
+    else:
+        return np.zeros((x1.shape[0], x2.shape[0]))
 
 
-def gen_data(samples, beta_noise=0, S_0_noise=0, nu_noise=0):
-    beta = np.random.normal(0.9, beta_noise, samples)
-    S_0 = np.random.normal(7, S_0_noise, samples)
-    nu = np.random.normal(0.2, nu_noise, samples)
-    R_0 = beta*S_0/nu
-    X = np.stack((beta, S_0, nu), axis=-1)
-    return X, R_0
+def squared_exponential(x1, x2, var, length, noise_var):
+    if x2 is None:
+        return var*jnp.exp(-cdist(x1, x1, metric='sqeuclidean')/length**2) \
+               + (1/noise_var)*jnp.eye(x1.shape[0])
+    else:
+        return var*jnp.exp(-cdist(x1, x2, metric='sqeuclidean')/length**2)
 
 
 class gp_pred:
@@ -27,22 +30,14 @@ class gp_pred:
         self.x_grid = x_train
         self.x_data = x_real
         self.y_data = y_real
-        self.kernel = self.rbf_kernel
+        self.kernel = rbf_kernel
         self.length = length
         self.var = var
 
-    def rbf_kernel(self, x1, x2):
-        if x2 is None:
-            d = cdist(x1, x1)
-        else:
-            d = cdist(x1, x2)
-        K = self.var*np.exp(-np.power(d, 2)/self.length)
-        return K
-
     def gp_prediction(self, kernel):
-        k_starX = kernel(self.x_grid, self.x_data)
-        k_xx = kernel(self.x_data, None)
-        k_starstar = kernel(self.x_grid, None)
+        k_starX = kernel(self.x_grid, self.x_data, self.length, self.var)
+        k_xx = kernel(self.x_data, None, self.length, self.var)
+        k_starstar = kernel(self.x_grid, None, self.length, self.var)
         mu = k_starX.dot(np.linalg.inv(k_xx)).dot(self.y_data)
         var = k_starstar - (k_starX).dot(np.linalg.inv(k_xx)).dot(k_starX.T)
         return mu, var
@@ -54,21 +49,28 @@ class gp_pred:
         return mean
 
 
-if __name__ == "__main__":
-    X_train = gen_meshgrid()
-    X_real, y_real = gen_data(5, beta_noise=0.2, S_0_noise=0.2, nu_noise=0.002)
-    gp = gp_pred(X_train, X_real, y_real, 1, 0.1)
-    ave_vals = gp.main()
+class gp_denoise:
+    def __init__(self, x_real, y_real, length, var):
+        self.x_data = x_real
+        self.y_data = y_real
+        self.length = length
+        self.var = var
 
-    # plt.hist(y_real, bins=10)
-    # plt.show()
+    def gp_prediction(self, kernel):
+        k_starX = kernel(self.x_data, self.x_data, self.length, self.var)
+        k_xx = kernel(self.x_data, None, self.length, self.var)
+        k_starstar = kernel(self.x_data, None, self.length, self.var)
+        mu = k_starX.dot(np.linalg.inv(k_xx)).dot(self.y_data)
+        var = k_starstar - (k_starX).dot(np.linalg.inv(k_xx)).dot(k_starX.T)
+        return mu, var
 
-    # for a, b in zip(ave_vals, X_train):
-    #     print(a, b)
+    def main(self):
+        mu, var = self.gp_prediction()
+        f_ = np.random.multivariate_normal(mu, var, 100)
+        mean = [np.mean(f) for f in f_.T]
+        return mean
 
-    plt.hist(ave_vals, bins=10)
-    plt.show()
 
-    plt.hist(X_train.T[0], bins=10)
-    plt.show()
-    
+class ranking:
+    def __init__(self, df, length, var):
+        pass

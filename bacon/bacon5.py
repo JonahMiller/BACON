@@ -37,9 +37,9 @@ class BACON_5:
     It allows additional benefits such as noise resistance and machine learning based
     pruning.
     """
-    def __init__(self, initial_df, bacon_1_info=False, bacon_5_info=False):
+    def __init__(self, initial_df, delta=0.01, bacon_1_info=False, bacon_5_info=False):
         self.initial_df = initial_df
-        self.delta = 0.01
+        self.delta = delta
         self.bacon_1_info = bacon_1_info
         self.bacon_5_info = bacon_5_info
         self.eqns = []
@@ -179,7 +179,6 @@ class BACON_5:
 
             df_count = 0
             for df in self.dfs:
-                print(df)
 
                 # small_df = self.get_smaller_df(df)
                 small_df = df.iloc[:3, :]
@@ -222,9 +221,6 @@ class BACON_5:
                     self.found_exprs.append([new_expression,
                                              self.iteration_level,
                                              df_count])
-
-                    # Update backup dfs
-                    # backup_df = self.update_df_with_single_expr(new_expression, backup_df)
 
                     new_dfs.append(df.drop(index=indecies[1:]))
                 df_count += 1

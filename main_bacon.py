@@ -20,6 +20,8 @@ def ParseArgs():
                         help="which BACON version to run on")
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to dataset")
+    parser.add_argument("--delta", type=float, default=0.01, metavar="N",
+                        help="how much delta to allow in calculations via BACON")
     parser.add_argument("--bacon_1_verbose", action="store_true",
                         help="activates verbose mode for the program's decisions at the BACON 1 level")
     parser.add_argument("--bacon_3_verbose", action="store_true",
@@ -51,6 +53,7 @@ def main():
                         bacon_4_info=args.bacon_4_verbose)
     elif args.bacon == 5:
         bacon = BACON_5(initial_df,
+                        delta=args.delta,
                         bacon_1_info=args.bacon_1_verbose,
                         bacon_5_info=args.bacon_5_verbose)
 

@@ -55,7 +55,7 @@ def plot_model(ax, x_y, time, alpha=1, lw=2, title="SIR model",):
     return ax
 
 
-def noisy_SIR(S, I, R, index, noise):
+def noisy_SIR(S, I, R, index, noise):  # noqa
     S_data, I_data, R_data = [], [], []
     for i in index:
         S_data.append(S[i] + noise*abs(np.random.normal(0, 1)))
@@ -72,9 +72,9 @@ def pytensor_forward_model_matrix(theta):
 
 # https://www.pymc.io/projects/examples/en/latest/ode_models/ODE_Lotka_Volterra_multiple_ways.html
 class inference_SIR:
-    def __init__(self, S, I, R, t):
+    def __init__(self, S, I, R, t):  # noqa
         self.S = S
-        self.I = I
+        self.I = I  # noqa
         self.R = R
         self.time = np.arange(0, 300, 1)
         self.df = pd.DataFrame(dict(
