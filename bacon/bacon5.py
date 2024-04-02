@@ -6,6 +6,7 @@ from itertools import islice
 
 from bacon.bacon1 import BACON_1
 import bacon.losses as bl
+from data.gp import ranking
 
 
 def chunk(it, size):
@@ -13,7 +14,7 @@ def chunk(it, size):
     return iter(lambda: tuple(islice(it, size)), ())
 
 
-def run_bacon_1(df, col_1, col_2, verbose=False):
+def run_bacon_1(df, col_1, col_2, epsilon, delta, verbose=False):
     """
     Runs an instance of BACON.1 on the specified columns
     col_1 and col_2 in the specified dataframe df.
@@ -27,7 +28,9 @@ def run_bacon_1(df, col_1, col_2, verbose=False):
             print(f"         unused variables {col_names} set as {col_ave}.")
         else:
             print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}]")
-    bacon_1_instance = BACON_1(df[[col_1, col_2]], bacon_1_info=verbose)
+    bacon_1_instance = BACON_1(df[[col_1, col_2]],
+                               epsilon=epsilon, delta=delta,
+                               bacon_1_info=verbose)
     return bacon_1_instance.bacon_iterations()
 
 
@@ -37,8 +40,17 @@ class BACON_5:
     It allows additional benefits such as noise resistance and machine learning based
     pruning.
     """
-    def __init__(self, initial_df, delta=0.01, bacon_1_info=False, bacon_5_info=False):
+    def __init__(self, initial_df, ranking_df=False,
+                 epsilon=0.001, delta=0.01,
+                 bacon_1_info=False, bacon_5_info=False):
         self.initial_df = initial_df
+        if ranking_df is not None:
+            self.ranking_func = self.lowest_ranked
+            self.ranking_df = ranking_df
+        else:
+            # self.ranking_func = random.choice
+            self.ranking_func = min
+        self.epsilon = epsilon
         self.delta = delta
         self.bacon_1_info = bacon_1_info
         self.bacon_5_info = bacon_5_info
@@ -52,8 +64,8 @@ class BACON_5:
 
         TODO: Use maching learning here.
         '''
-        # init_df = pd.DataFrame(self.initial_df, index=[0, 1, 2, 4, 8, 13, 26, 40, 80])
-        init_df = pd.DataFrame(self.initial_df, index=[3, 4, 5, 0, 8, 13, 26])
+        init_df = pd.DataFrame(self.initial_df, index=[0, 1, 2, 4, 8, 13, 26, 40, 80])
+        # init_df = pd.DataFrame(self.initial_df, index=[3, 4, 5, 0, 8, 13, 26])
         self.dfs = [init_df]
 
     def get_smaller_df(self, df):
@@ -103,6 +115,10 @@ class BACON_5:
         df = df.iloc[:, :-2].join(new_cols)
         return df
 
+    def lowest_ranked(self, indices):
+        small_df = self.ranking_df.iloc[indices]
+        return small_df[['rank']].idxmin()[0]
+
     def generate_backup_df(self, df_idx, iteration_level):
         indecies = []
         init_idx = len(self.initial_df.index.values)
@@ -115,7 +131,7 @@ class BACON_5:
                     if idx in group:
                         lgroup = list(group)
                         lgroup.remove(idx)
-                        indecies.append(min(lgroup))
+                        indecies.append(self.ranking_func(lgroup))
 
         elif iteration_level == 2:
             groups = list(chunk(groups, 3))
@@ -126,7 +142,7 @@ class BACON_5:
                             if idx in grou:
                                 lgroup = list(group)
                                 lgroup.remove(grou)
-                                indecies.append(min(list(sum(lgroup, ()))))
+                                indecies.append(self.ranking_func(list(sum(lgroup, ()))))
 
         elif iteration_level == 3:
             groups = list(chunk(groups, 9))
@@ -137,7 +153,7 @@ class BACON_5:
                             if idx in grou:
                                 lgroup = list(group)
                                 lgroup.remove(grou)
-                                indecies.append(min(list(sum(lgroup, ()))))
+                                indecies.append(self.ranking_func(list(sum(lgroup, ()))))
 
         backup_df = pd.DataFrame(self.initial_df, index=indecies)
         return backup_df
@@ -179,13 +195,14 @@ class BACON_5:
 
             df_count = 0
             for df in self.dfs:
+                ranking(df).rank_new_df()
 
                 # small_df = self.get_smaller_df(df)
                 small_df = df.iloc[:3, :]
                 indecies = small_df.index.values
 
                 results = run_bacon_1(small_df, small_df.columns[-1], small_df.columns[-2],
-                                      verbose=self.bacon_1_info)
+                                      epsilon=self.epsilon, delta=self.delta, verbose=self.bacon_1_info)
 
                 # Special check for linear relationship added to dataframe
                 if isinstance(results[2], list):
@@ -235,7 +252,8 @@ class BACON_5:
             if self.bacon_5_info:
                 print(f"BACON 5: Running BACON 1 on final variables [{df.columns[0]}, {df.columns[1]}]")
 
-            results = run_bacon_1(df, df.columns[0], df.columns[1], verbose=self.bacon_1_info)
+            results = run_bacon_1(df, df.columns[0], df.columns[1],
+                                  epsilon=self.epsilon, delta=self.delta, verbose=self.bacon_1_info)
 
             if self.bacon_5_info:
                 print(f"BACON 5: {results[1]} is constant at {fmean(results[0])}")

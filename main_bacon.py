@@ -3,6 +3,7 @@ import time
 import pandas as pd
 
 import data.datasets as data
+from data.gp import ranking
 
 from bacon.bacon3 import BACON_3
 from bacon.bacon4 import BACON_4
@@ -20,8 +21,10 @@ def ParseArgs():
                         help="which BACON version to run on")
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to dataset")
+    parser.add_argument("--epsilon", type=float, default=0.0001, metavar="N",
+                        help="how much epsilon error to allow in calculations via BACON")
     parser.add_argument("--delta", type=float, default=0.01, metavar="N",
-                        help="how much delta to allow in calculations via BACON")
+                        help="how much delta error to allow in calculations via BACON")
     parser.add_argument("--bacon_1_verbose", action="store_true",
                         help="activates verbose mode for the program's decisions at the BACON 1 level")
     parser.add_argument("--bacon_3_verbose", action="store_true",
@@ -30,6 +33,8 @@ def ParseArgs():
                         help="activates verbose mode for the program's decisions at the BACON 4 level")
     parser.add_argument("--bacon_5_verbose", action="store_true",
                         help="activates verbose mode for the program's decisions at the BACON 5 level")
+    parser.add_argument("--bacon_5_ranking", action="store_true",
+                        help="ranks tree roots for best performance using BACON 5")
 
     args = parser.parse_args()
     return args
@@ -52,7 +57,14 @@ def main():
                         bacon_3_info=args.bacon_3_verbose,
                         bacon_4_info=args.bacon_4_verbose)
     elif args.bacon == 5:
+        if args.bacon_5_ranking:
+            initial_df, ranking_df = ranking(initial_df).rank_new_df()
+        else:
+            ranking_df = None
+
         bacon = BACON_5(initial_df,
+                        ranking_df=ranking_df,
+                        epsilon=args.epsilon,
                         delta=args.delta,
                         bacon_1_info=args.bacon_1_verbose,
                         bacon_5_info=args.bacon_5_verbose)

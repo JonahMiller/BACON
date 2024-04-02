@@ -8,7 +8,7 @@ def main(data, variables):
     y = data[-1]
 
     model = PySRRegressor(
-        niterations=100,
+        niterations=30,
         maxsize=15,
         binary_operators=["+", "*", "/", "-"],
         extra_sympy_mappings={"inv": lambda x: 1 / x},

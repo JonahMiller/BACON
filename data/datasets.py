@@ -46,18 +46,18 @@ def ohm(noise=0):
     T = np.array(9*[100] + 9*[120] + 9*[140])
     D = np.array(3*(3*[1] + 3*[2] + 3*[3]))
     L = np.array(3*(3*([5, 10, 15])))
-    I = np.array(T*D**2/(v*(L + r)))  # noqa
+    I = np.array(T*D**2/(v*(L + r))) + noise*np.random.normal(0, 1, 27)  # noqa
     return [T, D, L, I], [sym.Symbol("T"), sym.Symbol("D"), sym.Symbol("L"), sym.Symbol("I")]
 
 
 def black(noise=0):
-    c_1 = 4.2
-    c_2 = 1.81
+    c_1 = 4
+    c_2 = 2
     M_1 = np.array(27*[1] + 27*[2] + 27*[3])
     M_2 = np.array(3*(9*[1] + 9*[2] + 9*[3]))
     T_1 = np.array(9*(3*[50] + 3*[60] + 3*[70]))
     T_2 = np.array(27*([50, 60, 70]))
-    T_f = np.array((c_1*M_1*T_1 + c_2*M_2*T_2)/(c_1*M_1 + c_2*M_2))
+    T_f = np.array((c_1*M_1*T_1 + c_2*M_2*T_2)/(c_1*M_1 + c_2*M_2)) + noise*np.random.normal(0, 1, 81)
     return [M_1, M_2, T_1, T_2, T_f], \
            [sym.Symbol("M_1"), sym.Symbol("M_2"), sym.Symbol("T_1"), sym.Symbol("T_2"), sym.Symbol("T_f")]
 

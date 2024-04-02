@@ -8,11 +8,11 @@ warnings.filterwarnings('ignore')
 
 
 class BACON_1:
-    def __init__(self, initial_df, bacon_1_info=False, lin_bound=0.0001, delta=0.01):
+    def __init__(self, initial_df, bacon_1_info=False, epsilon=0.0001, delta=0.01):
         self.symbols = list(initial_df)
         self.data = [initial_df[col_name] for col_name in self.symbols]
         self.info = bacon_1_info
-        self.lin_bound = lin_bound
+        self.epsilon = epsilon
         self.delta = delta
 
     def new_symbol(self):
@@ -85,7 +85,7 @@ class BACON_1:
         self.check_constant(b_, abs(b))
 
         if self.update != "constant":
-            if 1 - abs(r) < self.lin_bound and abs(c) > 0.0000001:
+            if 1 - abs(r) < self.epsilon and abs(c) > 0.0000001:
                 sy = sym.simplify(b_ - m*a_)
                 if self.new_term(sy):
                     self.check_linear(a_, b_, a, b, r)
