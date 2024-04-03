@@ -88,8 +88,8 @@ class BACON_5:
         indices = current_df.index.values
         for col_name in current_df.columns.tolist():
             if len(col_name.free_symbols) > 1:
-                temp_df = current_df.rename(columns={col_name: Symbol("z")})
-                new_expr = expr.subs(col_name, Symbol("z"))
+                temp_df = current_df.rename(columns={col_name: Symbol("zeta")})
+                new_expr = expr.subs(col_name, Symbol("zeta"))
             else:
                 new_expr = expr
                 temp_df = current_df

@@ -3,10 +3,6 @@ import jax as jnp
 from scipy.spatial.distance import cdist
 import GPy
 
-import pandas as pd
-import data.datasets as data
-# import datasets as data
-
 
 def rbf_kernel(x1, x2, length, var):
     if x2 is None:
@@ -88,31 +84,15 @@ class ranking:
         y = y.reshape((len(self.init_df.index), 1))
         return X, y
 
-    def gp_denoiser(self):
+    def signal_noise_ratio(self):
         X, y = self.sort_df()
         m = GPy.models.GPRegression(X, y, self.kernel)
         m.constrain_positive('')  # '' is a regex matching all parameter names
         m.optimize()
-        print(m[0]/m[3])
-        return X, y, m.predict(X)
 
-    def rank_new_df(self):
-        X, y, pred = self.gp_denoiser()
-        # print(self.init_df)
-        # seq = sorted((y - pred[0]))
-        # index = np.array([seq.index(v) + 1 for v in (y - pred[0])])
-        # ranked_frame = pd.DataFrame({"rank": index})
-        # last_col = list(self.init_df.columns.values)[-1]
-        # df = self.init_df.iloc[:, :-1].join(pd.DataFrame({last_col: pred[0].flatten()}))
-        # return df, ranked_frame
+        print(type(m[0]/m[3]))
 
-
-if __name__ == "__main__":
-    data_func = data.allowed_data()["ideal"]
-    init_data, init_symb = data_func(noise=0)
-    initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
-
-    r = ranking(initial_df)
-    df, ranked_frame = r.rank_new_df()
-    # print(df)
-    # print(ranked_frame)
+        if m[0]/m[3] > 1e100:
+            return 1e100
+        else:
+            return m[0]/m[3]
