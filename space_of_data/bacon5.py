@@ -4,9 +4,9 @@ from statistics import fmean
 from sympy import Eq, lambdify,  Symbol, simplify
 from itertools import islice
 
-from bacon.bacon1 import BACON_1
-import bacon.losses as bl
-from data.gp import ranking
+from space_of_laws.bacon1 import BACON_1
+import utils.losses as bl
+from utils.gp import ranking
 
 
 def chunk(it, size):

@@ -3,11 +3,10 @@ import time
 import pandas as pd
 
 import data.datasets as data
-from data.gp import ranking
+from utils.gp import ranking
 
-from bacon.bacon3 import BACON_3
-from bacon.bacon4 import BACON_4
-from bacon.bacon5 import BACON_5
+from space_of_data.bacon3 import BACON_3
+from space_of_data.bacon5 import BACON_5
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -29,8 +28,6 @@ def ParseArgs():
                         help="activates verbose mode for the program's decisions at the BACON 1 level")
     parser.add_argument("--bacon_3_verbose", action="store_true",
                         help="activates verbose mode for the program's decisions at the BACON 3 level")
-    parser.add_argument("--bacon_4_verbose", action="store_true",
-                        help="activates verbose mode for the program's decisions at the BACON 4 level")
     parser.add_argument("--bacon_5_verbose", action="store_true",
                         help="activates verbose mode for the program's decisions at the BACON 5 level")
     parser.add_argument("--bacon_5_ranking", action="store_true",
@@ -51,11 +48,6 @@ def main():
         bacon = BACON_3(initial_df,
                         bacon_1_info=args.bacon_1_verbose,
                         bacon_3_info=args.bacon_3_verbose)
-    elif args.bacon == 4:
-        bacon = BACON_4(initial_df,
-                        bacon_1_info=args.bacon_1_verbose,
-                        bacon_3_info=args.bacon_3_verbose,
-                        bacon_4_info=args.bacon_4_verbose)
     elif args.bacon == 5:
         if args.bacon_5_ranking:
             initial_df, ranking_df = ranking(initial_df).rank_new_df()

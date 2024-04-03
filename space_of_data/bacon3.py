@@ -2,8 +2,8 @@ import pandas as pd
 from statistics import fmean
 from sympy import Eq
 
-from bacon.bacon1 import BACON_1
-import bacon.losses as bl
+from space_of_laws.bacon1 import BACON_1
+import utils.losses as bl
 
 
 def run_bacon_1(df, col_1, col_2, verbose=False):
