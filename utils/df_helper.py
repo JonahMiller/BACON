@@ -17,8 +17,8 @@ def new_df_col(expr, current_df):
     indices = current_df.index.values
     for col_name in current_df.columns.tolist():
         if len(col_name.free_symbols) > 1:
-            temp_df = current_df.rename(columns={col_name: Symbol("zeta")})
-            new_expr = expr.subs(col_name, Symbol("zeta"))
+            temp_df = current_df.rename(columns={col_name: Symbol("d_0")})
+            new_expr = expr.subs(col_name, Symbol("d_0"))
         else:
             new_expr = expr
             temp_df = current_df
@@ -49,20 +49,20 @@ def update_df_with_multiple_expr(expression1, expression2, df):
 
 def check_const_col(dfs, eqns, delta, logging):
     """
-    Checks if there are fixed variables in the columns, these may be from the linearity
-    relationship or just being found when initialised. Should protect against data being
-    put in different orders.
+    Checks if the final column (of newly found variable) is fixed.
     """
+    idx_delete = []
     for i, df in enumerate(list(dfs)):
-        temp_dict = df.to_dict("list")
-        for idx, val in temp_dict.items():
-            mean = fmean(val)
-            M = abs(mean)
-            if all(M*(1 - delta) < abs(v) < M*(1 + delta) for v in val):
-                if logging:
-                    print(f"BACON 5: {idx} is constant at {mean}")
-                eqns.append(Eq(idx, mean))
-                del dfs[i]
+        col = df.iloc[:, -1].values.tolist()
+        mean = fmean(col)
+        M = abs(mean)
+        if all(M*(1 - delta) < abs(v) < M*(1 + delta) for v in col):
+            if logging:
+                print(f"BACON 5: {df.columns.tolist()[-1]} is constant at {mean}")
+            eqns.append(Eq(df.columns.tolist()[-1], mean))
+            idx_delete.append(i)
+    for idx in sorted(idx_delete, reverse=True):
+        del dfs[idx]
     return dfs, eqns
 
 
@@ -93,9 +93,19 @@ def linear_relns(df, dummy_sym, expr_sym):
     data2 = df.iloc[:, -2].values.tolist()
 
     expr_data, dummy_data = [], []
-    m, c = np.polyfit(data1, data2, 1)
-    dummy_data.append(m)
-    expr_data.append(c)
+
+    for idx in range(len(data1)):
+        d1_1 = data1[:idx + 1] + data1[idx + 2:]
+        d2_1 = data2[:idx + 1] + data2[idx + 2:]
+
+        d1_2 = data1[:idx - 1] + data1[idx:]
+        d2_2 = data2[:idx - 1] + data2[idx:]
+
+        m1, c1 = np.polyfit(d1_1, d2_1, 1)
+        m2, c2 = np.polyfit(d1_2, d2_2, 1)
+        dummy_data.append((m1 + m2)/2)
+        expr_data.append((c1 + c2)/2)
+
     return pd.DataFrame({dummy_sym: dummy_data}, index=indecies), \
         pd.DataFrame({expr_sym: expr_data}, index=indecies)
 

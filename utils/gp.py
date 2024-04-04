@@ -90,8 +90,6 @@ class ranking:
         m.constrain_positive('')  # '' is a regex matching all parameter names
         m.optimize()
 
-        print(type(m[0]/m[3]))
-
         if m[0]/m[3] > 1e100:
             return 1e100
         else:

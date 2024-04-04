@@ -7,7 +7,7 @@ from utils import df_helper as df_helper
 from utils.gp import ranking
 
 
-def run_bacon_1(df, col_1, col_2, verbose=False):
+def run_bacon_1(df, col_1, col_2, delta, epsilon, verbose=False):
     """
     Runs an instance of BACON.1 on the specified columns
     col_1 and col_2 in the specified dataframe df.
@@ -21,7 +21,9 @@ def run_bacon_1(df, col_1, col_2, verbose=False):
             print(f"         unused variables {col_names} set as {col_ave}.")
         else:
             print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}]")
-    bacon_1_instance = BACON_1(df[[col_1, col_2]], bacon_1_info=verbose)
+    bacon_1_instance = BACON_1(df[[col_1, col_2]],
+                               epsilon, delta,
+                               bacon_1_info=verbose)
     return bacon_1_instance.bacon_iterations()
 
 
@@ -30,9 +32,10 @@ class layer:
     BACON.3 can be thought of a layer-by-layer running of BACON.1 with
     previous variable fixes. This class runs each layer instance.
     """
-    def __init__(self, df, bacon_1_info=False):
+    def __init__(self, df, delta, epsilon, bacon_1_info=False):
         self.df = df
-        self.broken_dfs = []
+        self.delta = delta
+        self.epsilon = epsilon
         self.bacon_1_info = bacon_1_info
 
     def find_exprs(self):
@@ -50,16 +53,18 @@ class layer:
 
         for df in s_dfs:
             # Perform Bacon.1 on last 2 columns in system
-            data, symb, lin = run_bacon_1(df, df.columns[-1], df.columns[-2], verbose=self.bacon_1_info)
+            data, symb, lin = run_bacon_1(df, df.columns[-1], df.columns[-2],
+                                          self.delta, self.epsilon,
+                                          verbose=self.bacon_1_info)
 
-            if lin:
+            if isinstance(lin, list):
                 symb = lin[2]
 
             if symb in exprs_found:
                 exprs_found[symb] += 1
             else:
                 exprs_found[symb] = 1
-                if lin:
+                if isinstance(lin, list):
                     lin_relns[symb] = [lin[1], lin[2], lin[4], lin[5]]
 
         return exprs_found, lin_relns
@@ -99,29 +104,24 @@ class layer:
 
     @staticmethod
     def rank_exprs(exprs_df_dict):
-        max_ratios = 0
+        best_ratio = 0
         for expr, dfs in exprs_df_dict.items():
-            ratios = 0
-            for df in dfs:
-                s_n_ratio = ranking(df).signal_noise_ratio()
-                print(s_n_ratio)
-                print(df)
-                if len(dfs) == 2:
-                    ratios += s_n_ratio/2
-                else:
-                    ratios += s_n_ratio
-            if ratios > max_ratios:
-                max_ratios = ratios
+            if len(dfs) == 2:
+                s_n_ratio = min(ranking(dfs[0]).signal_noise_ratio(),
+                                ranking(dfs[1]).signal_noise_ratio())
+            else:
+                s_n_ratio = ranking(dfs[0]).signal_noise_ratio()
+            if s_n_ratio > best_ratio:
+                best_ratio = s_n_ratio
                 best_expr = expr
-                best_dfs = dfs
-        return best_expr, best_dfs
+            print(expr, s_n_ratio)
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        return best_expr
 
     def run_single_iteration(self):
         expr_df_dict = self.construct_dfs()
-        expr, dfs = layer.rank_exprs(expr_df_dict)
-        print(expr)
-        # print(dfs)
-        raise Exception
+        expr = layer.rank_exprs(expr_df_dict)
+        return expr_df_dict[expr]
 
 
 class RANKING_FORWARD:
@@ -129,10 +129,12 @@ class RANKING_FORWARD:
     Manages the layers of the dataframe, including the potentially new layers found
     when linear relationships are found. Then it runs BACON.1 on the those two columns.
     """
-    def __init__(self, initial_df, bacon_1_info=False, bacon_3_info=False):
+    def __init__(self, initial_df, delta=0.15, epsilon=0.001,
+                 bacon_1_info=False, bacon_3_info=False):
         self.initial_df = initial_df
         self.dfs = [initial_df]
-        self.delta = 0.01
+        self.delta = delta
+        self.epsilon = epsilon
         self.bacon_1_info = bacon_1_info
         self.bacon_3_info = bacon_3_info
         self.eqns = []
@@ -144,9 +146,12 @@ class RANKING_FORWARD:
         """
         while self.not_last_iteration():
             new_dfs = []
-            df_helper.check_const_col(self.dfs, self.eqns, self.delta, logging=False)
+
+            self.dfs, self.eqns = df_helper.check_const_col(self.dfs, self.eqns,
+                                                            self.delta, logging=False)
+
             for df in self.dfs:
-                bacon_layer_in_context = layer(df, self.bacon_1_info)
+                bacon_layer_in_context = layer(df, self.delta, self.epsilon, self.bacon_1_info)
                 new_df = bacon_layer_in_context.run_single_iteration()
                 new_dfs.extend(new_df)
 
@@ -161,6 +166,12 @@ class RANKING_FORWARD:
 
             self.dfs = new_dfs
 
+            self.print_dfs()
+            print(self.eqns)
+
+            self.epsilon = self.epsilon*0.1
+            self.delta += 0.02
+
         constants = []
         for df in self.dfs:
             # When only 2 columns left do simple Bacon 1
@@ -168,7 +179,9 @@ class RANKING_FORWARD:
             if self.bacon_3_info:
                 print(f"BACON 3: Running BACON 1 on final variables [{df.columns[0]}, {df.columns[1]}]")
 
-            results = run_bacon_1(df, df.columns[0], df.columns[1], verbose=self.bacon_1_info)
+            results = run_bacon_1(df, df.columns[0], df.columns[1],
+                                  self.delta, self.epsilon,
+                                  verbose=self.bacon_1_info)
 
             if self.bacon_3_info:
                 print(f"BACON 3: {results[1]} is constant at {fmean(results[0])}")

@@ -8,7 +8,7 @@ warnings.filterwarnings('ignore')
 
 
 class BACON_1:
-    def __init__(self, initial_df, bacon_1_info=False, epsilon=0.0001, delta=0.01):
+    def __init__(self, initial_df, epsilon=0.001, delta=0.1, bacon_1_info=False):
         self.symbols = list(initial_df)
         self.data = [initial_df[col_name] for col_name in self.symbols]
         self.info = bacon_1_info
@@ -41,13 +41,13 @@ class BACON_1:
 
         TODO: update how the fail returns in the latter case above.
         '''
-        self.lin_data = ""
+        self.lin_data = None
         init_d, init_sy, self.update = self.initial_constant()
         if self.update == "constant":
             return init_d, init_sy, self.update
 
         j = 0
-        while self.update != "constant" and j < 10:
+        while self.update != "constant" and j < 6:
             sy_start = len(self.symbols)
             self.bacon_instance(0, -1)
             if self.update == "product" or self.update == "division":
@@ -64,11 +64,11 @@ class BACON_1:
         '''
         Checks if any variables are initialised as constant.
         '''
-        M_0 = fmean(self.data[0])
+        # M_0 = fmean(self.data[0])
         M_1 = fmean(self.data[1])
-        if all(M_0*(1 - self.delta) < abs(v) < M_0*(1 + self.delta) for v in self.data[0]):
-            return self.data[0], self.symbols[0], "constant"
-        elif all(M_1*(1 - self.delta) < abs(v) < M_1*(1 + self.delta) for v in self.data[1]):
+        # if all(M_0*(1 - self.delta) < abs(v) < M_0*(1 + self.delta) for v in self.data[0]):
+        #     return self.data[0], self.symbols[0], "constant"
+        if all(M_1*(1 - self.delta) < abs(v) < M_1*(1 + self.delta) for v in self.data[1]):
             return self.data[1], self.symbols[1], "constant"
         else:
             return self.data, self.symbols, ""
