@@ -21,4 +21,4 @@ def main(data, variables):
     X = pd.DataFrame({str(v): d for v, d in zip(variables[:-1], data[:-1])})
 
     model.fit(X, y)
-    print(model)
+    print(model.sympy())

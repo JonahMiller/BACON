@@ -63,6 +63,8 @@ def main():
                         bacon_5_info=args.bacon_5_verbose)
     elif args.space_of_data == 9:
         bacon = RANKING_FORWARD(initial_df,
+                                delta=args.delta,
+                                epsilon=args.epsilon,
                                 bacon_1_info=args.bacon_1_verbose,
                                 bacon_3_info=args.bacon_3_verbose)
 

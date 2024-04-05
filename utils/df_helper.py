@@ -40,6 +40,10 @@ def update_df_with_single_expr(expression, df):
 
 
 def update_df_with_multiple_expr(expression1, expression2, df):
+    """
+    Removes last 2 columns of df and replace with expressions replacing
+    these 2 columns.
+    """
     new_col_1 = new_df_col(expression1, df)
     new_col_2 = df.loc[:, [expression2]]
     new_cols = new_col_1.join(new_col_2)
@@ -53,10 +57,16 @@ def check_const_col(dfs, eqns, delta, logging):
     """
     idx_delete = []
     for i, df in enumerate(list(dfs)):
-        col = df.iloc[:, -1].values.tolist()
+
+        col = df.iloc[:, -1].values
+        col = col.reshape(-1, 3).mean(axis=1)
         mean = fmean(col)
         M = abs(mean)
-        if all(M*(1 - delta) < abs(v) < M*(1 + delta) for v in col):
+        if all(M*(1 - delta) < abs(v) < M*(1 + delta) for v in df.iloc[:, -1].values):
+
+        # if len([v for v in col
+        #         if abs(v) < M*(1 - delta) or abs(v) > M*(1 + delta)]) \
+        #         <= np.ceil(delta*len(col)):
             if logging:
                 print(f"BACON 5: {df.columns.tolist()[-1]} is constant at {mean}")
             eqns.append(Eq(df.columns.tolist()[-1], mean))

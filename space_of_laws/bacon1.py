@@ -1,6 +1,6 @@
 import numpy as np
 from statistics import fmean
-import sympy as sym
+from sympy import Symbol, simplify
 from scipy.stats import linregress as lr
 
 import warnings
@@ -23,11 +23,11 @@ class BACON_1:
         letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
                    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
         index = 0
-        letter = sym.Symbol(letters[index])
+        letter = Symbol(letters[index])
         used_symbols = sum(s for s in self.symbols).free_symbols
         while letter in used_symbols and index < 25:
             index += 1
-            letter = sym.Symbol(letters[index])
+            letter = Symbol(letters[index])
         if index == 25:
             raise Exception
         return letter
@@ -64,10 +64,7 @@ class BACON_1:
         '''
         Checks if any variables are initialised as constant.
         '''
-        # M_0 = fmean(self.data[0])
         M_1 = fmean(self.data[1])
-        # if all(M_0*(1 - self.delta) < abs(v) < M_0*(1 + self.delta) for v in self.data[0]):
-        #     return self.data[0], self.symbols[0], "constant"
         if all(M_1*(1 - self.delta) < abs(v) < M_1*(1 + self.delta) for v in self.data[1]):
             return self.data[1], self.symbols[1], "constant"
         else:
@@ -86,17 +83,17 @@ class BACON_1:
 
         if self.update != "constant":
             if 1 - abs(r) < self.epsilon and abs(c) > 0.0000001:
-                sy = sym.simplify(b_ - m*a_)
+                sy = simplify(b_ - m*a_)
                 if self.new_term(sy):
                     self.check_linear(a_, b_, a, b, r)
 
             elif r > 0:
-                sy = sym.simplify(a_/b_)
+                sy = simplify(a_/b_)
                 if self.new_term(sy):
                     self.division(a_, b_, a, b)
 
             elif r < 0:
-                sy = sym.simplify(a_*b_)
+                sy = simplify(a_*b_)
                 if self.new_term(sy):
                     self.product(a_, b_, a, b)
 
@@ -104,7 +101,7 @@ class BACON_1:
         '''
         Checks if the new term BACON.1 proposed has been tried already.
         '''
-        if symbol not in self.symbols and sym.simplify(1/symbol) not in self.symbols and symbol != 1:
+        if symbol not in self.symbols and simplify(1/symbol) not in self.symbols and symbol != 1:
             return True
         else:
             self.update = ""
@@ -126,7 +123,7 @@ class BACON_1:
         with the other term in context.
         '''
         m, c = np.polyfit(data_1, data_2, 1)
-        self.symbols.append(sym.simplify(symbol_2 - m*symbol_1))
+        self.symbols.append(simplify(symbol_2 - m*symbol_1))
         self.data.append(data_2 - m*data_1)
         self.update = "linear"
         k = self.new_symbol()
@@ -139,20 +136,20 @@ class BACON_1:
         '''
         Performs a product operation on the current terms.
         '''
-        self.symbols.append(sym.simplify(symbol_1*symbol_2))
+        self.symbols.append(simplify(symbol_1*symbol_2))
         self.data.append(data_1*data_2)
         self.update = "product"
         if self.info:
             print(f"BACON 1: {symbol_1} increases whilst {symbol_2} decreases,")
-            print(f"         considering new variable {sym.simplify(symbol_1*symbol_2)}")
+            print(f"         considering new variable {simplify(symbol_1*symbol_2)}")
 
     def division(self, symbol_1, symbol_2, data_1, data_2):
         '''
         Performs a division operation on the current terms.
         '''
-        self.symbols.append(sym.simplify(symbol_1/symbol_2))
+        self.symbols.append(simplify(symbol_1/symbol_2))
         self.data.append(data_1/data_2)
         self.update = "division"
         if self.info:
             print(f"BACON 1: {symbol_1} increases whilst {symbol_2} increases,")
-            print(f"         considering new variable {sym.simplify(symbol_1/symbol_2)}")
+            print(f"         considering new variable {simplify(symbol_1/symbol_2)}")

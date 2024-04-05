@@ -3,28 +3,34 @@ from statistics import fmean
 from sympy import Eq
 
 from space_of_laws.bacon1 import BACON_1
+from space_of_laws.low_level_pysr import main
+
 from utils import df_helper as df_helper
 from utils.gp import ranking
 
 
+# def run_bacon_1(df, col_1, col_2, delta, epsilon, verbose=False):
+#     """
+#     Runs an instance of BACON.1 on the specified columns
+#     col_1 and col_2 in the specified dataframe df.
+#     """
+#     if verbose:
+#         unused_df = df.iloc[:, :-2]
+#         col_names = unused_df.columns.tolist()
+#         col_ave = [unused_df.loc[:, name].mean() for name in col_names]
+#         if len(col_names) != 0:
+#             print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}] and")
+#             print(f"         unused variables {col_names} set as {col_ave}.")
+#         else:
+#             print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}]")
+#     bacon_1_instance = BACON_1(df[[col_1, col_2]],
+#                                epsilon, delta,
+#                                bacon_1_info=verbose)
+#     return bacon_1_instance.bacon_iterations()
+
+
 def run_bacon_1(df, col_1, col_2, delta, epsilon, verbose=False):
-    """
-    Runs an instance of BACON.1 on the specified columns
-    col_1 and col_2 in the specified dataframe df.
-    """
-    if verbose:
-        unused_df = df.iloc[:, :-2]
-        col_names = unused_df.columns.tolist()
-        col_ave = [unused_df.loc[:, name].mean() for name in col_names]
-        if len(col_names) != 0:
-            print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}] and")
-            print(f"         unused variables {col_names} set as {col_ave}.")
-        else:
-            print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}]")
-    bacon_1_instance = BACON_1(df[[col_1, col_2]],
-                               epsilon, delta,
-                               bacon_1_info=verbose)
-    return bacon_1_instance.bacon_iterations()
+    return main(df[[col_1, col_2]])
 
 
 class layer:
@@ -166,11 +172,8 @@ class RANKING_FORWARD:
 
             self.dfs = new_dfs
 
-            self.print_dfs()
-            print(self.eqns)
-
-            self.epsilon = self.epsilon*0.1
-            self.delta += 0.02
+            # self.epsilon = self.epsilon*0.1
+            # self.delta += 0.02
 
         constants = []
         for df in self.dfs:
@@ -186,6 +189,7 @@ class RANKING_FORWARD:
             if self.bacon_3_info:
                 print(f"BACON 3: {results[1]} is constant at {fmean(results[0])}")
             constants.append(results[1])
+
             self.eqns.append(Eq(results[1], fmean(results[0])))
 
         df_helper.score(self.initial_df, self.eqns)
