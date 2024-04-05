@@ -5,9 +5,18 @@ from pysr import PySRRegressor
 
 
 def main(initial_df):
-    symbols = list(initial_df)
+    for col_name in initial_df.columns.tolist():
+        if len(col_name.free_symbols) > 1:
+            temp_df = initial_df.rename(columns={col_name: Symbol("eta")})
+            save_expr = col_name
+            subst = True
+        else:
+            temp_df = initial_df
+            subst = False
+
+    symbols = list(temp_df)
     symbols.reverse()
-    data = [initial_df[col_name] for col_name in symbols]
+    data = [temp_df[col_name] for col_name in symbols]
 
     y = data[-1]
 
@@ -27,6 +36,9 @@ def main(initial_df):
     model.fit(X, y)
     eqn_rhs = simplify(model.sympy())
 
+    symbols = list(initial_df)
+    symbols.reverse()
+
     eqn = Eq(symbols[1], eqn_rhs)
 
     if len(Add.make_args(eqn_rhs)) == 2:
@@ -41,8 +53,13 @@ def main(initial_df):
         else:
             var = list(eqn_rhs.atoms(Pow))[0]
         coeff = eqn_rhs.coeff(var)
+
         symb = solve(eqn, coeff)[0]
-        return "", symb, ""
+
+        if subst:
+            symb = symb.subs(Symbol("eta"), save_expr)
+
+        return [coeff], symb, ""
     else:
         raise Exception("Not equipped to deal with non-linear relations")
 
@@ -54,12 +71,12 @@ def new_symbol(symbols):
     '''
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
                'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-    index = 0
-    letter = Symbol(letters[index])
-    used_symbols = sum(s for s in symbols).free_symbols
-    while letter in used_symbols and index < 25:
-        index += 1
-        letter = Symbol(letters[index])
-    if index == 25:
-        raise Exception
+    used_symbols = sum(sym for sym in symbols).free_symbols
+    for sym in used_symbols:
+        try:
+            idx = letters.index(str(sym))
+            letters = letters[idx + 1:]
+        except ValueError:
+            continue
+    letter = Symbol(letters[0])
     return letter

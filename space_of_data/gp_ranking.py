@@ -9,27 +9,51 @@ from utils import df_helper as df_helper
 from utils.gp import ranking
 
 
-# def run_bacon_1(df, col_1, col_2, delta, epsilon, verbose=False):
-#     """
-#     Runs an instance of BACON.1 on the specified columns
-#     col_1 and col_2 in the specified dataframe df.
-#     """
-#     if verbose:
-#         unused_df = df.iloc[:, :-2]
-#         col_names = unused_df.columns.tolist()
-#         col_ave = [unused_df.loc[:, name].mean() for name in col_names]
-#         if len(col_names) != 0:
-#             print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}] and")
-#             print(f"         unused variables {col_names} set as {col_ave}.")
-#         else:
-#             print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}]")
-#     bacon_1_instance = BACON_1(df[[col_1, col_2]],
-#                                epsilon, delta,
-#                                bacon_1_info=verbose)
-#     return bacon_1_instance.bacon_iterations()
-
-
 def run_bacon_1(df, col_1, col_2, delta, epsilon, verbose=False):
+    """
+    Runs an instance of BACON.1 on the specified columns
+    col_1 and col_2 in the specified dataframe df.
+    """
+    if verbose:
+        unused_df = df.iloc[:, :-2]
+        col_names = unused_df.columns.tolist()
+        col_ave = [unused_df.loc[:, name].mean() for name in col_names]
+        if len(col_names) != 0:
+            print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}] and")
+            print(f"         unused variables {col_names} set as {col_ave}.")
+        else:
+            print(f"BACON 1: Running BACON 1 on variables [{col_1}, {col_2}]")
+    bacon_1_instance = BACON_1(df[[col_1, col_2]],
+                               epsilon, delta,
+                               bacon_1_info=verbose)
+    return bacon_1_instance.bacon_iterations()
+
+
+def run_pysr(df, col_1, col_2, delta, epsilon, verbose=False):
+    # data, sym, lin_data = main(df[[col_1, col_2]])
+    # if len(df.columns) == 2:
+
+    #     if isinstance(lin_data, list):
+
+    #         df = df_helper.update_df_with_multiple_expr(lin_data[4],
+    #                                                     lin_data[5],
+    #                                                     df)
+
+    #         new_dummy_col, new_expr_col = pd.DataFrame(), pd.DataFrame()
+
+    #         dummy_col, expr_col = df_helper.final_linear_relns(df,
+    #                                                            lin_data[1],
+    #                                                            lin_data[2])
+    #         new_dummy_col = pd.concat([new_dummy_col, dummy_col])
+    #         new_expr_col = pd.concat([new_expr_col, expr_col])
+
+    #         n_df1 = df.iloc[:, :-2].join(new_dummy_col)
+    #         n_df2 = df.iloc[:, :-2].join(new_expr_col)
+
+    #     else:
+    #         n_df = df_helper.update_df_with_single_expr(sym, df)
+    # else:
+    #     return data, sym, lin_data
     return main(df[[col_1, col_2]])
 
 
@@ -59,9 +83,9 @@ class layer:
 
         for df in s_dfs:
             # Perform Bacon.1 on last 2 columns in system
-            data, symb, lin = run_bacon_1(df, df.columns[-1], df.columns[-2],
-                                          self.delta, self.epsilon,
-                                          verbose=self.bacon_1_info)
+            data, symb, lin = run_pysr(df, df.columns[-1], df.columns[-2],
+                                       self.delta, self.epsilon,
+                                       verbose=self.bacon_1_info)
 
             if isinstance(lin, list):
                 symb = lin[2]
@@ -182,9 +206,9 @@ class RANKING_FORWARD:
             if self.bacon_3_info:
                 print(f"BACON 3: Running BACON 1 on final variables [{df.columns[0]}, {df.columns[1]}]")
 
-            results = run_bacon_1(df, df.columns[0], df.columns[1],
-                                  self.delta, self.epsilon,
-                                  verbose=self.bacon_1_info)
+            results = run_pysr(df, df.columns[0], df.columns[1],
+                               self.delta, self.epsilon,
+                               verbose=self.bacon_1_info)
 
             if self.bacon_3_info:
                 print(f"BACON 3: {results[1]} is constant at {fmean(results[0])}")

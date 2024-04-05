@@ -22,14 +22,14 @@ class BACON_1:
         '''
         letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
                    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-        index = 0
-        letter = Symbol(letters[index])
-        used_symbols = sum(s for s in self.symbols).free_symbols
-        while letter in used_symbols and index < 25:
-            index += 1
-            letter = Symbol(letters[index])
-        if index == 25:
-            raise Exception
+        used_symbols = sum(sym for sym in self.symbols).free_symbols
+        for sym in used_symbols:
+            try:
+                idx = letters.index(str(sym))
+                letters = letters[idx + 1:]
+            except ValueError:
+                continue
+        letter = Symbol(letters[0])
         return letter
 
     def bacon_iterations(self):
