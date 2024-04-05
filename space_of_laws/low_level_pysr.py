@@ -1,5 +1,6 @@
 import pandas as pd
 from sympy import Eq, Add, Symbol, solve, Pow, simplify
+
 from pysr import PySRRegressor
 
 
