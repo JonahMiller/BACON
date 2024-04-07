@@ -4,7 +4,7 @@ from statistics import fmean
 from sympy import Eq, lambdify,  Symbol, simplify
 from itertools import islice
 
-from space_of_laws.bacon1 import BACON_1
+from space_of_laws.laws_methods.bacon1 import BACON_1
 import utils.losses as bl
 from utils.gp import ranking
 

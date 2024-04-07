@@ -64,9 +64,10 @@ def check_const_col(dfs, eqns, delta, logging):
         M = abs(mean)
         if all(M*(1 - delta) < abs(v) < M*(1 + delta) for v in df.iloc[:, -1].values):
 
-        # if len([v for v in col
-        #         if abs(v) < M*(1 - delta) or abs(v) > M*(1 + delta)]) \
-        #         <= np.ceil(delta*len(col)):
+            # if len([v for v in col
+            #         if abs(v) < M*(1 - delta) or abs(v) > M*(1 + delta)]) \
+            #         <= np.ceil(delta*len(col)):
+
             if logging:
                 print(f"BACON 5: {df.columns.tolist()[-1]} is constant at {mean}")
             eqns.append(Eq(df.columns.tolist()[-1], mean))

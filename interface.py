@@ -1,13 +1,14 @@
 import argparse
 import time
+import json
 import pandas as pd
 
 import data.datasets as data
-from utils.gp import ranking
 
-from space_of_data.bacon3 import BACON_3
-from space_of_data.bacon5 import BACON_5
-from space_of_data.gp_ranking import RANKING_FORWARD
+from space_of_laws.laws_manager import laws_main
+from space_of_data.layer_manager import layer_main
+
+from space_of_data.data_space_manager import data_space
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -17,23 +18,24 @@ def ParseArgs():
     parser = argparse.ArgumentParser(description="Pat Langley's BACON programs simulator")
     parser.add_argument("--dataset", type=str, choices=data.allowed_data(), metavar="D",
                         help="which dataset would you like to analyse")
-    parser.add_argument("--space_of_data", type=int, choices=[3, 5, 9], default=3, metavar="B",
-                        help="which BACON version to run on")
     parser.add_argument("--noise", type=float, default=0., metavar="N",
-                        help="how much noise to add to dataset")
-    parser.add_argument("--epsilon", type=float, default=0.0001, metavar="N",
-                        help="how much epsilon error to allow in calculations via BACON")
-    parser.add_argument("--delta", type=float, default=0.01, metavar="N",
-                        help="how much delta error to allow in calculations via BACON")
-    parser.add_argument("--bacon_1_verbose", action="store_true",
-                        help="activates verbose mode for the program's decisions at the BACON 1 level")
-    parser.add_argument("--bacon_3_verbose", action="store_true",
-                        help="activates verbose mode for the program's decisions at the BACON 3 level")
-    parser.add_argument("--bacon_5_verbose", action="store_true",
-                        help="activates verbose mode for the program's decisions at the BACON 5 level")
-    parser.add_argument("--bacon_5_ranking", action="store_true",
-                        help="ranks tree roots for best performance using BACON 5")
-
+                        help="how much noise to add to the dataset")
+    parser.add_argument("--delta", type=float, default=0.1, metavar="d",
+                        help="delta error tolerance for constant values in data space")
+    parser.add_argument("--space_of_data", type=str,
+                        choices=["bacon.3", "bacon.5", "gp_ranking", "popularity"],
+                        default="gp_ranking", metavar="SD",
+                        help="how to traverse the space of data")
+    parser.add_argument("--space_of_laws", type=str,
+                        choices=["bacon.1", "pysr"],
+                        default="bacon.1", metavar="SL",
+                        help="how to traverse the space of laws")
+    parser.add_argument("--data_space_verbose", action="store_true",
+                        help="activates verbose mode for the data space manager")
+    parser.add_argument("--layer_space_args", type=str, metavar="f1", default=None,
+                        help="json file for args used in space of data setting")
+    parser.add_argument("--laws_space_args", type=str, metavar="f2", default=None,
+                        help="json file for args used in space of laws setting")
     args = parser.parse_args()
     return args
 
@@ -45,30 +47,22 @@ def main():
     init_data, init_symb = data_func(args.noise)
     initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
 
-    if args.space_of_data == 3:
-        bacon = BACON_3(initial_df,
-                        bacon_1_info=args.bacon_1_verbose,
-                        bacon_3_info=args.bacon_3_verbose)
-    elif args.space_of_data == 5:
-        if args.bacon_5_ranking:
-            initial_df, ranking_df = ranking(initial_df).rank_new_df()
-        else:
-            ranking_df = None
+    if args.layer_space_args:
+        layer_args = json.loads(args.layer_space_args)
+    else:
+        layer_args = None
 
-        bacon = BACON_5(initial_df,
-                        ranking_df=ranking_df,
-                        epsilon=args.epsilon,
-                        delta=args.delta,
-                        bacon_1_info=args.bacon_1_verbose,
-                        bacon_5_info=args.bacon_5_verbose)
-    elif args.space_of_data == 9:
-        bacon = RANKING_FORWARD(initial_df,
-                                delta=args.delta,
-                                epsilon=args.epsilon,
-                                bacon_1_info=args.bacon_1_verbose,
-                                bacon_3_info=args.bacon_3_verbose)
+    if args.laws_space_args:
+        laws_args = json.loads(args.laws_space_args)
+    else:
+        laws_args = None
 
-    bacon.bacon_iterations()
+    ds = data_space(initial_df,
+                    layer_main(args.space_of_data, layer_args),
+                    laws_main(args.space_of_laws, laws_args),
+                    args.data_space_verbose)
+
+    ds.run_iterations()
 
 
 if __name__ == "__main__":

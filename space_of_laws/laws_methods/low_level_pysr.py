@@ -91,7 +91,6 @@ def new_symbol(symbols):
     '''
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
                'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-    # used_symbols = sum(sym for sym in symbols).free_symbols
     used_symbols = list(symbols.free_symbols)
     for sym in used_symbols:
         try:
