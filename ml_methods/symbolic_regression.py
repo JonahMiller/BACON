@@ -1,9 +1,13 @@
 import pandas as pd
+import argparse
+import time
+
+import data.datasets as data
 
 from pysr import PySRRegressor
 
 
-def main(data, variables):
+def run_pysr(data, variables):
 
     y = data[-1]
 
@@ -22,3 +26,29 @@ def main(data, variables):
 
     model.fit(X, y)
     print(model.sympy())
+
+
+def ParseArgs():
+    parser = argparse.ArgumentParser(description="PySR CLI")
+    parser.add_argument("--dataset", type=str, choices=data.allowed_data(), metavar="D",
+                        help="which dataset would you like to analyse")
+    parser.add_argument("--noise", type=float, default=0., metavar="N",
+                        help="how much noise to add to dataset")
+
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    args = ParseArgs()
+
+    data_func = data.allowed_data()[args.dataset]
+    init_data, init_symb = data_func(args.noise)
+
+    run_pysr(init_data, init_symb)
+
+
+if __name__ == "__main__":
+    start = time.time()
+    main()
+    print(f"Program took {time.time() - start}s!")
