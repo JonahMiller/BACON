@@ -16,7 +16,7 @@ class data_space:
         self.laws_method = laws_method
         self.verbose = verbose
 
-        self.delta = 0.2
+        self.delta = 0.1
         self.eqns = []
 
     def run_iterations(self):
@@ -29,6 +29,8 @@ class data_space:
 
             self.dfs, self.eqns = df_helper.check_const_col(self.dfs, self.eqns,
                                                             self.delta, self.verbose)
+
+            # self.print_dfs()
 
             for df in self.dfs:
                 layer_in_context = self.layer_method(df, self.laws_method)

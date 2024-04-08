@@ -5,6 +5,8 @@ from pysr import PySRRegressor
 
 
 def main(initial_df):
+    print(initial_df)
+
     eta = Symbol("eta")
 
     symbols = list(initial_df)
@@ -33,7 +35,12 @@ def main(initial_df):
     if len(eqn_rhs.free_symbols) == 0:
         return [float(eqn_rhs)], symbols[0], ""
 
+    # if eqn_rhs.count(symbols[1]) != 1:
+    #     print("Non-linear relation found, returning blank.")
+    #     return None, None, None
+
     expanded_eqn, coeff = expand_form(eqn)
+
     return return_form(expanded_eqn, coeff, symbols[0])
 
 
@@ -42,21 +49,22 @@ def expand_form(eqn):
     eqn_rhs = eqn.rhs
     eqn_lhs = eqn.lhs
     arg_list = list(Add.make_args(eqn_rhs))
-    term = 1
+
     if len(arg_list) == 1:
         for term in list(arg_list[0].args):
             if isinstance(term, Number):
                 break
+            term = 1
         expr = eqn_rhs/term
         eqn_rhs = eqn_rhs.subs(expr, zeta)
         final_form = solve(Eq(eqn_lhs, eqn_rhs), term)[0]
         final_form = final_form.subs(zeta, expr)
+
     elif len(arg_list) == 2:
         eqn_rhs -= list(arg_list)[1]
         final_form = eqn_lhs - list(arg_list)[1]
         term = eqn_rhs
-    else:
-        raise Exception("Not equipped to deal with non-linear relations")
+
     expanded = expand(final_form)
     return expanded, term
 
@@ -64,24 +72,28 @@ def expand_form(eqn):
 def return_form(expanded_form, coeff, lhs):
     eta = Symbol("eta")
     arg_list = list(Add.make_args(expanded_form))
-    print(expanded_form, arg_list, coeff)
-    term = 1
-    for arg in arg_list:
-        if arg != eta:
-            var_arg = arg
-            for term in list(var_arg.args):
-                if isinstance(term, Number):
-                    break
+    expanded_form = expanded_form.subs(eta, lhs)
     if len(arg_list) == 1:
-        expanded_form = expanded_form.subs(eta, lhs)
-        return [coeff], expanded_form, ""
+        return [coeff], nsimplify(simplify(expanded_form)), None
+
     elif len(arg_list) == 2:
+        term = 1
+        print(arg_list)
+        for arg in arg_list:
+            arg_ = nsimplify(arg)
+            if any(isinstance(term, Number) for term in list(arg_.args)):
+                var_arg = arg.subs(eta, lhs)
+                for term in list(arg.args):
+                    if isinstance(term, Number):
+                        coeff = term
+            else:
+                fixed_arg = arg_.subs(eta, lhs)
         k = new_symbol(expanded_form)
-        first, second, third = lhs - nsimplify(k*(var_arg/term)), \
-            lhs, nsimplify(var_arg/term)
-        lin_data = ["linear", k, first, term, second, third]
-        print(lin_data)
-        return [coeff], first, lin_data
+        first, second, third = fixed_arg - nsimplify(k*(var_arg/coeff)), \
+            fixed_arg, nsimplify(var_arg/coeff)
+        lin_data = ["linear", k, first, -coeff, second, third]
+        print([coeff], nsimplify(simplify(expanded_form)), lin_data)
+        return [coeff], nsimplify(simplify(expanded_form)), lin_data
 
 
 def new_symbol(symbols):

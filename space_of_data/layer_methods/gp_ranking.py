@@ -16,18 +16,27 @@ class ranking_layer:
 
         s_dfs = df_helper.deconstruct_df(self.df)
 
+        invalid_returns = 0
+
         for df in s_dfs:
             data, symb, lin = self.laws_method(df, df.columns[-1], df.columns[-2])
 
             if isinstance(lin, list):
                 symb = lin[2]
 
-            if symb in exprs_found:
-                exprs_found[symb] += 1
+            if symb:
+                if symb in exprs_found:
+                    exprs_found[symb] += 1
+                else:
+                    exprs_found[symb] = 1
+                    if isinstance(lin, list):
+                        lin_relns[symb] = [lin[1], lin[2], lin[4], lin[5]]
+
             else:
-                exprs_found[symb] = 1
-                if isinstance(lin, list):
-                    lin_relns[symb] = [lin[1], lin[2], lin[4], lin[5]]
+                invalid_returns += 1
+
+        if invalid_returns == len(s_dfs):
+            raise Exception("No relationships found compatible with this program")
 
         return exprs_found, lin_relns
 

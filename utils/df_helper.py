@@ -44,8 +44,13 @@ def update_df_with_multiple_expr(expression1, expression2, df):
     Removes last 2 columns of df and replace with expressions replacing
     these 2 columns.
     """
-    new_col_1 = new_df_col(expression1, df)
-    new_col_2 = df.loc[:, [expression2]]
+    try:
+        new_col_1 = new_df_col(expression1, df)
+        new_col_2 = df.loc[:, [expression2]]
+    except KeyError:
+        new_col_1 = new_df_col(expression2, df)
+        new_col_2 = df.loc[:, [expression1]]
+
     new_cols = new_col_1.join(new_col_2)
     df = df.iloc[:, :-2].join(new_cols)
     return df

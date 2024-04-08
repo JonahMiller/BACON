@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 
 
 def ParseArgs():
-    parser = argparse.ArgumentParser(description="Pat Langley's BACON programs simulator")
+    parser = argparse.ArgumentParser(description="Multitude of methods to best find the invariants of a dataset")
     parser.add_argument("--dataset", type=str, choices=data.allowed_data(), metavar="D",
                         help="which dataset would you like to analyse")
     parser.add_argument("--noise", type=float, default=0., metavar="N",

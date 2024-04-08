@@ -58,6 +58,7 @@ class BACON_1:
             sy_end = len(self.symbols)
             if sy_start == sy_end:
                 break
+        print(self.data[-1], self.symbols[-1], self.lin_data)
         return self.data[-1], self.symbols[-1], self.lin_data
 
     def initial_constant(self):

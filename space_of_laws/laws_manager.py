@@ -1,5 +1,5 @@
 from space_of_laws.laws_methods.bacon1 import BACON_1
-from space_of_laws.laws_methods.low_level_pysr import main
+from space_of_laws.laws_methods.low_level_pysr2 import main
 
 
 def bacon_1(df, col_1, col_2, verbose=False, delta=0.1, epsilon=0.001):
