@@ -48,12 +48,14 @@ def main():
     initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
 
     if args.layer_space_args:
-        layer_args = json.loads(args.layer_space_args)
+        with open(args.layer_space_args, "r") as j:
+            layer_args = json.loads(j.read())
     else:
         layer_args = None
 
     if args.laws_space_args:
-        laws_args = json.loads(args.laws_space_args)
+        with open(args.laws_space_args, "r") as j:
+            laws_args = json.loads(j.read())
     else:
         laws_args = None
 

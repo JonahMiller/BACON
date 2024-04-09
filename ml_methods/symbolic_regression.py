@@ -2,6 +2,8 @@ import pandas as pd
 import argparse
 import time
 
+import sys
+sys.path.append("..")
 import data.datasets as data
 
 from pysr import PySRRegressor

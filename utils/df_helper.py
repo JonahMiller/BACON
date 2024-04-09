@@ -15,16 +15,14 @@ def new_df_col(expr, current_df):
     current_df.columns = [*current_df.columns[:-1], simplify(current_df.columns.tolist()[-1])]
 
     indices = current_df.index.values
-    for col_name in current_df.columns.tolist():
-        if len(col_name.free_symbols) > 1:
-            temp_df = current_df.rename(columns={col_name: Symbol("d_0")})
-            new_expr = expr.subs(col_name, Symbol("d_0"))
-        else:
-            new_expr = expr
-            temp_df = current_df
+
+    last_col_name = current_df.columns.tolist()[-1]
+    temp_df = current_df.rename(columns={last_col_name: Symbol("d_0")})
+    expr2 = expr.subs(last_col_name, Symbol("d_0"))
+    expr3 = expr2.subs(1/last_col_name, 1/Symbol("d_0"))
 
     vars = temp_df.columns.tolist()
-    f = lambdify([tuple(vars)], new_expr)
+    f = lambdify([tuple(vars)], expr3)
     new_col = np.array([(f(tuple(val))) for val in temp_df[list(vars)].to_numpy().tolist()])
     return pd.DataFrame({expr: new_col}, index=indices)
 
@@ -48,8 +46,8 @@ def update_df_with_multiple_expr(expression1, expression2, df):
         new_col_1 = new_df_col(expression1, df)
         new_col_2 = df.loc[:, [expression2]]
     except KeyError:
-        new_col_1 = new_df_col(expression2, df)
-        new_col_2 = df.loc[:, [expression1]]
+        new_col_2 = new_df_col(expression2, df)
+        new_col_1 = df.loc[:, [expression1]]
 
     new_cols = new_col_1.join(new_col_2)
     df = df.iloc[:, :-2].join(new_cols)
@@ -102,7 +100,23 @@ def deconstruct_df(df):
     return smallest_dfs
 
 
+def average_small_df(df):
+    rows = len(df.index)
+    if rows != 3:
+        var_name = df.columns.tolist()[-1]
+        mean, idx = [], []
+        for i in range(3):
+            row_vals = df.iloc[i*int(rows/3):(i+1)*int(rows/3), -1].values.tolist()
+            mean.append(fmean(row_vals))
+            idx.append(i*int(rows/3))
+        n_df = df.iloc[idx, :-1]
+        var_df = pd.DataFrame({var_name: mean}, index=n_df.index)
+        return n_df.join(var_df)
+    return df
+
+
 def linear_relns(df, dummy_sym, expr_sym):
+    # print(df)
     indecies = df.index.values
 
     data1 = df.iloc[:, -1].values.tolist()

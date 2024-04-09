@@ -19,7 +19,8 @@ class ranking_layer:
         invalid_returns = 0
 
         for df in s_dfs:
-            data, symb, lin = self.laws_method(df, df.columns[-1], df.columns[-2])
+            ave_df = df_helper.average_small_df(df)
+            data, symb, lin = self.laws_method(ave_df, ave_df.columns[-1], ave_df.columns[-2])
 
             if isinstance(lin, list):
                 symb = lin[2]
@@ -75,6 +76,7 @@ class ranking_layer:
 
     @staticmethod
     def rank_exprs(exprs_df_dict):
+        print("+++++++++++++++++++++++++++++++")
         best_ratio = 0
         for expr, dfs in exprs_df_dict.items():
             if len(dfs) == 2:
@@ -86,7 +88,7 @@ class ranking_layer:
                 best_ratio = s_n_ratio
                 best_expr = expr
             print(expr, s_n_ratio)
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print("+++++++++++++++++++++++++++++++")
         return best_expr
 
     def run_single_iteration(self):

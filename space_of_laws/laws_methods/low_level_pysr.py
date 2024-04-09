@@ -1,14 +1,15 @@
 import pandas as pd
-from sympy import Eq, Add, Symbol, Number, simplify, nsimplify, expand, solve
+from sympy import Eq, Add, Symbol, Number, simplify, nsimplify, solve, fraction, expand
 
 from pysr import PySRRegressor
 
 
-def main(initial_df):
-    print(initial_df)
+eta = Symbol("eta")
+nu = Symbol("nu")
+psi = Symbol("psi")
 
-    eta = Symbol("eta")
 
+def main(initial_df, found_eqns):
     symbols = list(initial_df)
     data = [initial_df[col_name] for col_name in symbols]
 
@@ -25,75 +26,123 @@ def main(initial_df):
         delete_tempfiles=True
     )
 
-    X = pd.DataFrame({str(symbols[1]): data[1]})
+    X = pd.DataFrame({str(nu): data[1]})
 
     model.fit(X, y)
     eqn_rhs = simplify(model.sympy())
+    print(eqn_rhs)
 
     eqn = Eq(eta, eqn_rhs)
 
-    if len(eqn_rhs.free_symbols) == 0:
-        return [float(eqn_rhs)], symbols[0], ""
+    rhs_symb, terms = eqn_rhs.count(nu), len(Add.make_args(eqn_rhs))
 
-    # if eqn_rhs.count(symbols[1]) != 1:
-    #     print("Non-linear relation found, returning blank.")
-    #     return None, None, None
+    if rhs_symb == 0:
+        return [float(eqn_rhs.subs(nu, symbols[1]))], symbols[0], ""
 
-    expanded_eqn, coeff = expand_form(eqn)
-
-    return return_form(expanded_eqn, coeff, symbols[0])
-
-
-def expand_form(eqn):
-    zeta = Symbol("zeta")
-    eqn_rhs = eqn.rhs
-    eqn_lhs = eqn.lhs
-    arg_list = list(Add.make_args(eqn_rhs))
-
-    if len(arg_list) == 1:
-        for term in list(arg_list[0].args):
-            if isinstance(term, Number):
-                break
-            term = 1
-        expr = eqn_rhs/term
-        eqn_rhs = eqn_rhs.subs(expr, zeta)
-        final_form = solve(Eq(eqn_lhs, eqn_rhs), term)[0]
-        final_form = final_form.subs(zeta, expr)
-
-    elif len(arg_list) == 2:
-        eqn_rhs -= list(arg_list)[1]
-        final_form = eqn_lhs - list(arg_list)[1]
-        term = eqn_rhs
-
-    expanded = expand(final_form)
-    return expanded, term
-
-
-def return_form(expanded_form, coeff, lhs):
-    eta = Symbol("eta")
-    arg_list = list(Add.make_args(expanded_form))
-    expanded_form = expanded_form.subs(eta, lhs)
-    if len(arg_list) == 1:
-        return [coeff], nsimplify(simplify(expanded_form)), None
-
-    elif len(arg_list) == 2:
-        term = 1
-        print(arg_list)
-        for arg in arg_list:
-            arg_ = nsimplify(arg)
-            if any(isinstance(term, Number) for term in list(arg_.args)):
-                var_arg = arg.subs(eta, lhs)
-                for term in list(arg.args):
-                    if isinstance(term, Number):
-                        coeff = term
+    if rhs_symb == 1:
+        if terms == 1:
+            num, den = fraction(eqn.rhs)
+            if len(Add.make_args(den)) == 1:
+                return single_product_division(eqn, symbols)
             else:
-                fixed_arg = arg_.subs(eta, lhs)
-        k = new_symbol(expanded_form)
-        first, second, third = fixed_arg - nsimplify(k*(var_arg/coeff)), \
-            fixed_arg, nsimplify(var_arg/coeff)
-        lin_data = ["linear", k, first, -coeff, second, third]
-        print([coeff], nsimplify(simplify(expanded_form)), lin_data)
-        return [coeff], nsimplify(simplify(expanded_form)), lin_data
+                return complex_linear_1_term(eqn, symbols, found_eqns)
+        elif terms == 2:
+            return simple_linear(eqn, symbols, found_eqns)
+        else:
+            print("Unable to deal with non-linear relationship, returning blank")
+            return None, None, None
+
+    elif rhs_symb == 2:
+        num, den = fraction(eqn.rhs)
+        if len(Add.make_args(den)) == 2:
+            if terms == 1:
+                return complex_linear_1_term(eqn, symbols)
+        else:
+            print("Unable to deal with non-linear relationship, returning blank")
+            return None, None, None
+
+    else:
+        print("Unable to deal with non-linear relationship, returning blank")
+        return None, None, None
+
+
+def single_product_division(eqn, symbols):
+    arg_list = list(eqn.rhs.args)
+    const = 1
+    for arg in arg_list:
+        if isinstance(arg, Number):
+            const = arg
+    expr = solve(eqn, const)[0]
+    expr = subs_expr(expr, symbols)
+    return [const], expr, None
+
+
+def simple_linear(eqn, symbols, found_eqns):
+    const = 1
+    for arg in list(Add.make_args(eqn.rhs)):
+        if isinstance(arg, Number):
+            const = arg
+    expr = solve(eqn, const)[0]
+    coeff, var1, var2 = linear_term_coeff(expr, symbols)
+    k = new_symbol(found_eqns)
+    lin_data = ["linear", k, var1 - nsimplify(k*var2), -coeff, var1, var2, symbols]
+    return [coeff], subs_expr(expr, symbols), lin_data
+
+
+def complex_linear_1_term(eqn, symbols, found_eqns):
+    num, den = fraction(eqn.rhs)
+
+    if len(Add.make_args(num)) != 1:
+        print("Unable to deal with non-linear relationship, returning blank")
+        return None, None, None
+
+    bot_coeff = 1
+    for arg in list(den.args):
+        if isinstance(arg, Number):
+            const = arg
+        else:
+            var = arg
+            for ar in list(var.args):
+                if isinstance(ar, Number):
+                    bot_coeff = ar
+
+    expr = solve(Eq(eqn.lhs, (num/bot_coeff)/(var/bot_coeff + psi)), psi)[0]
+    print(expr)
+    print(expand(expr))
+    try:
+        coeff, var1, var2 = linear_term_coeff(expr, symbols)
+    except UnboundLocalError:
+        coeff, var1, var2 = linear_term_coeff(-expr, symbols)
+
+    print(coeff, var1, var2)
+
+    k = new_symbol(found_eqns)
+    lin_data = ["linear", k, var1 - nsimplify(k*var2), -coeff, var1, var2, symbols]
+    return [const/bot_coeff], subs_expr(expr, symbols), lin_data
+
+
+def linear_term_coeff(expr, symbols):
+    expr = expand(expr)
+    arg_list = Add.make_args(expr)
+    assert len(arg_list) == 2, f"arg list must has length 2 but instead is {arg_list}"
+    var2 = arg_list[1]
+    for arg in arg_list:
+        if any(isinstance(term, Number) for term in list(arg.args)):
+            for term in arg.args:
+                if isinstance(term, Number):
+                    coeff = term
+                else:
+                    var2 = term
+        else:
+            var1 = arg
+            coeff = 1
+    return coeff, subs_expr(var1, symbols), subs_expr(var2, symbols)
+
+
+def subs_expr(expr, symbols):
+    e1 = expr.subs(eta, symbols[0])
+    e2 = e1.subs(nu, symbols[1])
+    return e2
 
 
 def new_symbol(symbols):
@@ -103,7 +152,7 @@ def new_symbol(symbols):
     '''
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
                'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-    used_symbols = list(symbols.free_symbols)
+    used_symbols = sum(sym for sym in symbols).free_symbols
     for sym in used_symbols:
         try:
             idx = letters.index(str(sym))

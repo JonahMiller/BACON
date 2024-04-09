@@ -12,13 +12,12 @@ class popular_layer:
     def find_exprs(self):
         exprs_found = {}
         lin_relns = {}
-
-        s_dfs = df_helper.deconstruct_df(self.df)
-
         invalid_returns = 0
 
+        s_dfs = df_helper.deconstruct_df(self.df)
         for df in s_dfs:
-            data, symb, lin = self.laws_method(df, df.columns[-1], df.columns[-2])
+            ave_df = df_helper.average_small_df(df)
+            data, symb, lin = self.laws_method(ave_df, ave_df.columns[-1], ave_df.columns[-2])
 
             if isinstance(lin, list):
                 symb = lin[2]
@@ -30,7 +29,6 @@ class popular_layer:
                     exprs_found[symb] = 1
                     if isinstance(lin, list):
                         lin_relns[symb] = [lin[1], lin[2], lin[4], lin[5]]
-
             else:
                 invalid_returns += 1
 
