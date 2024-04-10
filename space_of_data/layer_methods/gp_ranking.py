@@ -18,7 +18,7 @@ class ranking_layer:
 
         s_dfs = df_helper.deconstruct_df(self.df)
         for df in s_dfs:
-            ave_df = df_helper.average_small_df(df)
+            ave_df = df_helper.average_df(df)
             data, symb, lin = self.laws_method(ave_df, ave_df.columns[-1],
                                                ave_df.columns[-2], self.symbols)
 
@@ -34,6 +34,9 @@ class ranking_layer:
                         self.lin_relns[symb] = [lin[1], lin[2], lin[4], lin[5]]
             else:
                 invalid_returns += 1
+
+        if self.verbose:
+            print(f"Ranking layer: Expressions found are {self.exprs_found}")
 
         if invalid_returns == len(s_dfs):
             raise Exception("No relationships found compatible with this program")
@@ -71,9 +74,10 @@ class ranking_layer:
         return self.exprs_dict
 
     def rank_exprs(self):
-        print("+++++++++++++++++++++++++++++++")
         best_ratio = 0
         len_best_expr = 1
+        if self.verbose:
+            print("Ranking layer: Iteratively ranking the found expressions:")
         for expr, dfs in self.exprs_dict.items():
             if len(dfs) == 2:
                 s_n_ratio = min(ranking(dfs[0]).signal_noise_ratio(),
@@ -84,8 +88,8 @@ class ranking_layer:
                 best_ratio = s_n_ratio
                 best_expr = expr
                 len_best_expr = len(dfs)
-            print(expr, s_n_ratio)
-        print("+++++++++++++++++++++++++++++++")
+            if self.verbose:
+                print(f"               {expr} has score {s_n_ratio}")
         if len_best_expr == 2:
             self.symbols.append(self.lin_relns[best_expr][0])
         return best_expr

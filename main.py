@@ -50,7 +50,7 @@ def main():
     else:
         layer_args = None
         laws_args = None
-        data_space_args = None
+        data_space_args = {}
 
     ds = data_space(initial_df,
                     layer_main(args.space_of_data, layer_args),

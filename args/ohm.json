@@ -1,4 +1,10 @@
 {
-    "epsilon": 0.001,
-    "delta": 0.1
+    "layer_args": {"verbose": true},
+
+    "laws_args": {"epsilon": 0.0001,
+                  "delta": 0.09,
+                  "verbose": false},
+
+    "data_space_args": {"delta": 0.25,
+                        "verbose": false}
 }

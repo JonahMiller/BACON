@@ -31,7 +31,6 @@ class data_space:
             self.dfs, self.eqns = df_helper.check_const_col(self.dfs, self.eqns,
                                                             self.delta, self.verbose)
 
-            # self.print_dfs()
             for df in self.dfs:
                 layer_in_context = self.layer_method(df, self.laws_method, self.symbols)
                 new_df, self.symbols = layer_in_context.run_single_iteration()
@@ -55,7 +54,8 @@ class data_space:
             if self.verbose:
                 print(f"Data space: Calculating laws on final variables [{df.columns[0]}, {df.columns[1]}]")
 
-            results = self.laws_method(df, df.columns[1], df.columns[0], self.symbols)
+            ave_df = df_helper.average_df(df)
+            results = self.laws_method(ave_df, ave_df.columns[1], ave_df.columns[0], self.symbols)
 
             if self.verbose:
                 print(f"Data space: {results[1]} is constant at {fmean(results[0])}")

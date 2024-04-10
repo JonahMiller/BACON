@@ -7,11 +7,16 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
+eta = Symbol("eta")
+nu = Symbol("nu")
+
+
 class BACON_1:
     def __init__(self, initial_df, all_found_symbols, epsilon=0.001, delta=0.1, bacon_1_info=False):
-        self.symbols = list(initial_df)
+        self.init_symbols = list(initial_df)
         self.all_found_symbols = all_found_symbols
-        self.data = [initial_df[col_name] for col_name in self.symbols]
+        self.data = [initial_df[col_name] for col_name in self.init_symbols]
+        self.symbols = [eta, nu]
         self.info = bacon_1_info
         self.epsilon = epsilon
         self.delta = delta
@@ -28,7 +33,7 @@ class BACON_1:
         self.lin_data = None
         init_d, init_sy, self.update = self.initial_constant()
         if self.update == "constant":
-            return init_d, init_sy, self.update
+            return init_d, self.subs_expr(init_sy), self.update
 
         j = 0
         while self.update != "constant" and j < 6:
@@ -36,13 +41,13 @@ class BACON_1:
             self.bacon_instance(0, -1)
             if self.update == "product" or self.update == "division":
                 self.bacon_instance(1, -2)
-            else:
+            elif self.update != "linear" and self.update != "constant":
                 self.bacon_instance(1, -1)
             j += 1
             sy_end = len(self.symbols)
-            if sy_start == sy_end:
+            if sy_start == sy_end or self.update == "linear":
                 break
-        return self.data[-1], self.symbols[-1], self.lin_data
+        return self.data[-1], self.subs_expr(self.symbols[-1]), self.lin_data
 
     def initial_constant(self):
         '''
@@ -67,9 +72,7 @@ class BACON_1:
 
         if self.update != "constant":
             if 1 - abs(r) < self.epsilon and abs(c) > 0.0000001:
-                sy = simplify(b_ - m*a_)
-                if self.new_term(sy):
-                    self.check_linear(a_, b_, a, b, r)
+                self.linear(a_, b_, a, b)
 
             elif r > 0:
                 sy = simplify(a_/b_)
@@ -101,17 +104,17 @@ class BACON_1:
             if self.info:
                 print(f"BACON 1: {symbol} is constant within our error")
 
-    def check_linear(self, symbol_1, symbol_2, data_1, data_2, r):
+    def linear(self, symbol_1, symbol_2, data_1, data_2):
         '''
-        Checks if the new term BACON.1 proposed is linearly proportional
-        with the other term in context.
+        Calculates the terms involved in the found linear relationship.
         '''
         m, c = np.polyfit(data_1, data_2, 1)
         self.symbols.append(simplify(symbol_2 - m*symbol_1))
         self.data.append(data_2 - m*data_1)
         self.update = "linear"
         k = self.new_symbol()
-        self.lin_data = ["linear", k, symbol_2 - k*symbol_1, m, symbol_2, symbol_1]
+        self.lin_data = ["linear", k, self.subs_expr(symbol_2 - k*symbol_1),
+                         m, self.subs_expr(symbol_2), self.subs_expr(symbol_1)]
         if self.info:
             print(f"BACON 1: {symbol_2} is linearly prop. to {symbol_1},")
             print(f"         we then see {self.symbols[-1]} is constant")
@@ -137,6 +140,11 @@ class BACON_1:
         if self.info:
             print(f"BACON 1: {symbol_1} increases whilst {symbol_2} increases,")
             print(f"         considering new variable {simplify(symbol_1/symbol_2)}")
+
+    def subs_expr(self, expr):
+        e1 = expr.subs(eta, self.init_symbols[0])
+        e2 = e1.subs(nu, self.init_symbols[1])
+        return e2
 
     def new_symbol(self):
         '''

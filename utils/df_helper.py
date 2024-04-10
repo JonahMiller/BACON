@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from statistics import fmean
-from sympy import Eq, lambdify,  Symbol, simplify
+from sympy import Symbol, Eq, lambdify, simplify, factor
 
 import utils.losses as loss_helper
 
@@ -13,14 +13,11 @@ def new_df_col(expr, current_df):
     """
     # Simplify column names deterministically for sympy to detect equivalent equations
     current_df.columns = [*current_df.columns[:-1], simplify(current_df.columns.tolist()[-1])]
-
     indices = current_df.index.values
-
     last_col_name = current_df.columns.tolist()[-1]
     temp_df = current_df.rename(columns={last_col_name: Symbol("d_0")})
-    expr2 = expr.subs(last_col_name, Symbol("d_0"))
+    expr2 = simplify(expr).subs(last_col_name, Symbol("d_0"))
     expr3 = expr2.subs(1/last_col_name, 1/Symbol("d_0"))
-
     vars = temp_df.columns.tolist()
     f = lambdify([tuple(vars)], expr3)
     new_col = np.array([(f(tuple(val))) for val in temp_df[list(vars)].to_numpy().tolist()])
@@ -65,16 +62,13 @@ def check_const_col(dfs, eqns, delta, logging):
         col = col.reshape(-1, 3).mean(axis=1)
         mean = fmean(col)
         M = abs(mean)
-        # print(mean, M, M*(1-delta), M*(1+delta), delta)
-        # print(df.columns.tolist()[-1], df.iloc[:, -1].values)
-        if all(M*(1 - delta) < abs(v) < M*(1 + delta) for v in df.iloc[:, -1].values):
 
-            # if len([v for v in col
-            #         if abs(v) < M*(1 - delta) or abs(v) > M*(1 + delta)]) \
-            #         <= np.ceil(delta*len(col)):
-
+        # if all(M*(1 - delta) < abs(v) < M*(1 + delta) for v in df.iloc[:, -1].values):
+        if len([v for v in col
+                if abs(v) < M*(1 - delta) or abs(v) > M*(1 + delta)]) \
+                <= np.ceil(delta*len(col)):
             if logging:
-                print(f"BACON 5: {df.columns.tolist()[-1]} is constant at {mean}")
+                print(f"SCORE : {df.columns.tolist()[-1]} is constant at {mean}")
             eqns.append(Eq(df.columns.tolist()[-1], mean))
             idx_delete.append(i)
     for idx in sorted(idx_delete, reverse=True):
@@ -102,7 +96,7 @@ def deconstruct_df(df):
     return smallest_dfs
 
 
-def average_small_df(df):
+def average_df(df):
     rows = len(df.index)
     if rows != 3:
         var_name = df.columns.tolist()[-1]
@@ -118,7 +112,6 @@ def average_small_df(df):
 
 
 def linear_relns(df, dummy_sym, expr_sym):
-    # print(df)
     indecies = df.index.values
 
     data1 = df.iloc[:, -1].values.tolist()
@@ -150,8 +143,7 @@ def score(init_df, eqns):
     for eqn in eqns:
         print(f"{eqn.rhs} = {eqn.lhs}")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
     eqn = loss_helper.simplify_eqns(init_df, eqns, key_var).iterate_through_dummys()
     loss = loss_helper.loss_calc(init_df, eqn).loss()
-    print(f"Final form is {eqn.rhs} = {eqn.lhs} with loss {loss}.")
+    print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with loss {loss}.")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")

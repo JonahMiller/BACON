@@ -17,7 +17,7 @@ class popular_layer:
 
         s_dfs = df_helper.deconstruct_df(self.df)
         for df in s_dfs:
-            ave_df = df_helper.average_small_df(df)
+            ave_df = df_helper.average_df(df)
             data, symb, lin = self.laws_method(ave_df, ave_df.columns[-1],
                                                ave_df.columns[-2], self.symbols)
 
@@ -37,9 +37,11 @@ class popular_layer:
         if invalid_returns == len(s_dfs):
             raise Exception("No relationships found compatible with this program")
 
-        print(exprs_found)
-
         best_expr = max(exprs_found, key=exprs_found.get)
+
+        if self.verbose:
+            print(f"Popularity layer: Expressions found are {self.exprs_found}")
+            print(f"                  proceeding with {best_expr}")
 
         if best_expr in lin_relns:
             lin_reln = lin_relns[best_expr]
