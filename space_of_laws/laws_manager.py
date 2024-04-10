@@ -1,8 +1,9 @@
 from space_of_laws.laws_methods.bacon1 import BACON_1
-from space_of_laws.laws_methods.low_level_pysr2 import main
+from space_of_laws.laws_methods.low_level_pysr import PYSR
 
 
-def bacon_1(df, col_1, col_2, verbose=False, delta=0.1, epsilon=0.001):
+def bacon_1(df, col_1, col_2, all_found_symbols,
+            verbose=False, delta=0.1, epsilon=0.001):
     """
     Runs an instance of BACON.1 on the specified columns
     col_1 and col_2 in the specified dataframe df.
@@ -16,13 +17,13 @@ def bacon_1(df, col_1, col_2, verbose=False, delta=0.1, epsilon=0.001):
             print(f"              unused variables {col_names} set as {col_ave}.")
         else:
             print(f"Laws manager: Running BACON 1 on variables [{col_1}, {col_2}]")
-    bacon_1_instance = BACON_1(df[[col_1, col_2]],
+    bacon_1_instance = BACON_1(df[[col_1, col_2]], all_found_symbols,
                                epsilon, delta,
                                bacon_1_info=verbose)
     return bacon_1_instance.bacon_iterations()
 
 
-def pysr(df, col_1, col_2, verbose=False):
+def pysr(df, col_1, col_2, all_found_symbols, verbose=False):
     if verbose:
         unused_df = df.iloc[:, :-2]
         col_names = unused_df.columns.tolist()
@@ -32,15 +33,16 @@ def pysr(df, col_1, col_2, verbose=False):
             print(f"              unused variables {col_names} set as {col_ave}.")
         else:
             print(f"Laws manager: Running PySR on variables [{col_1}, {col_2}]")
-    return main(df[[col_1, col_2]])
+    pysr_instance = PYSR(df[[col_1, col_2]], all_found_symbols)
+    return pysr_instance.run_iteration()
 
 
 def laws_main(laws_type, kwarg_dict):
     if kwarg_dict:
         if laws_type == "bacon.1":
-            return lambda df, col_1, col_2: bacon_1(df, col_1, col_2, **kwarg_dict)
+            return lambda df, col_1, col_2, afs: bacon_1(df, col_1, col_2, afs, **kwarg_dict)
         elif laws_type == "pysr":
-            return lambda df, col_1, col_2: pysr(df, col_1, col_2, **kwarg_dict)
+            return lambda df, col_1, col_2, afs: pysr(df, col_1, col_2, afs, **kwarg_dict)
 
     else:
         if laws_type == "bacon.1":

@@ -4,9 +4,10 @@ from utils import df_helper as df_helper
 
 
 class popular_layer:
-    def __init__(self, df, laws_method, verbose=False):
+    def __init__(self, df, laws_method, symbols, verbose=False):
         self.df = df
         self.laws_method = laws_method
+        self.symbols = symbols
         self.verbose = verbose
 
     def find_exprs(self):
@@ -17,7 +18,8 @@ class popular_layer:
         s_dfs = df_helper.deconstruct_df(self.df)
         for df in s_dfs:
             ave_df = df_helper.average_small_df(df)
-            data, symb, lin = self.laws_method(ave_df, ave_df.columns[-1], ave_df.columns[-2])
+            data, symb, lin = self.laws_method(ave_df, ave_df.columns[-1],
+                                               ave_df.columns[-2], self.symbols)
 
             if isinstance(lin, list):
                 symb = lin[2]
@@ -42,8 +44,6 @@ class popular_layer:
         else:
             lin_reln = None
 
-        print(exprs_found, best_expr)
-
         return best_expr, lin_reln
 
     def construct_dfs(self):
@@ -53,6 +53,8 @@ class popular_layer:
         new_dfs = []
 
         if lin_reln:
+            self.symbols.append(lin_reln[0])
+
             df = df_helper.update_df_with_multiple_expr(lin_reln[2],
                                                         lin_reln[3],
                                                         self.df)
@@ -79,4 +81,4 @@ class popular_layer:
         return new_dfs
 
     def run_single_iteration(self):
-        return self.construct_dfs()
+        return self.construct_dfs(), self.symbols

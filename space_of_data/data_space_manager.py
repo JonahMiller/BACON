@@ -15,6 +15,7 @@ class data_space:
         self.layer_method = layer_method
         self.laws_method = laws_method
         self.verbose = verbose
+        self.symbols = list(sum(sym for sym in list(initial_df)).free_symbols)
 
         self.delta = 0.05
         self.eqns = []
@@ -31,8 +32,8 @@ class data_space:
                                                             self.delta, self.verbose)
 
             for df in self.dfs:
-                layer_in_context = self.layer_method(df, self.laws_method)
-                new_df = layer_in_context.run_single_iteration()
+                layer_in_context = self.layer_method(df, self.laws_method, self.symbols)
+                new_df, self.symbols = layer_in_context.run_single_iteration()
                 new_dfs.extend(new_df)
 
                 if self.verbose:
@@ -53,7 +54,7 @@ class data_space:
             if self.verbose:
                 print(f"Data space: Calculating laws on final variables [{df.columns[0]}, {df.columns[1]}]")
 
-            results = self.laws_method(df, df.columns[1], df.columns[0])
+            results = self.laws_method(df, df.columns[1], df.columns[0], self.symbols)
 
             if self.verbose:
                 print(f"Data space: {results[1]} is constant at {fmean(results[0])}")

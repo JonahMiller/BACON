@@ -8,29 +8,13 @@ warnings.filterwarnings('ignore')
 
 
 class BACON_1:
-    def __init__(self, initial_df, epsilon=0.001, delta=0.1, bacon_1_info=False):
+    def __init__(self, initial_df, all_found_symbols, epsilon=0.001, delta=0.1, bacon_1_info=False):
         self.symbols = list(initial_df)
+        self.all_found_symbols = all_found_symbols
         self.data = [initial_df[col_name] for col_name in self.symbols]
         self.info = bacon_1_info
         self.epsilon = epsilon
         self.delta = delta
-
-    def new_symbol(self):
-        '''
-        Draws new variables to use in the case of linear relationships. Starts with
-        "a" and draws onwards in the alphabet.
-        '''
-        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-                   'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-        used_symbols = sum(sym for sym in self.symbols).free_symbols
-        for sym in used_symbols:
-            try:
-                idx = letters.index(str(sym))
-                letters = letters[idx + 1:]
-            except ValueError:
-                continue
-        letter = Symbol(letters[0])
-        return letter
 
     def bacon_iterations(self):
         '''
@@ -153,3 +137,19 @@ class BACON_1:
         if self.info:
             print(f"BACON 1: {symbol_1} increases whilst {symbol_2} increases,")
             print(f"         considering new variable {simplify(symbol_1/symbol_2)}")
+
+    def new_symbol(self):
+        '''
+        Draws new variables to use in the case of linear relationships. Starts with
+        "a" and draws onwards in the alphabet.
+        '''
+        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+                   'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+        for sym in self.all_found_symbols:
+            try:
+                idx = letters.index(str(sym))
+                letters = letters[idx + 1:]
+            except ValueError:
+                continue
+        letter = Symbol(letters[0])
+        return letter
