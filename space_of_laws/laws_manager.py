@@ -37,12 +37,12 @@ def pysr(df, col_1, col_2, all_found_symbols, verbose=False):
     return pysr_instance.run_iteration()
 
 
-def laws_main(laws_type, kwarg_dict):
-    if kwarg_dict:
+def laws_main(laws_type, kwargs):
+    if kwargs:
         if laws_type == "bacon.1":
-            return lambda df, col_1, col_2, afs: bacon_1(df, col_1, col_2, afs, **kwarg_dict)
+            return lambda df, col_1, col_2, afs: bacon_1(df, col_1, col_2, afs, **kwargs)
         elif laws_type == "pysr":
-            return lambda df, col_1, col_2, afs: pysr(df, col_1, col_2, afs, **kwarg_dict)
+            return lambda df, col_1, col_2, afs: pysr(df, col_1, col_2, afs, **kwargs)
 
     else:
         if laws_type == "bacon.1":

@@ -37,6 +37,8 @@ class popular_layer:
         if invalid_returns == len(s_dfs):
             raise Exception("No relationships found compatible with this program")
 
+        print(exprs_found)
+
         best_expr = max(exprs_found, key=exprs_found.get)
 
         if best_expr in lin_relns:

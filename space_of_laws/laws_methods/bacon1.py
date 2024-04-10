@@ -48,9 +48,9 @@ class BACON_1:
         '''
         Checks if any variables are initialised as constant.
         '''
-        M_1 = fmean(self.data[1])
-        if all(M_1*(1 - self.delta) < abs(v) < M_1*(1 + self.delta) for v in self.data[1]):
-            return self.data[1], self.symbols[1], "constant"
+        M_1 = fmean(self.data[0])
+        if all(M_1*(1 - self.delta) < abs(v) < M_1*(1 + self.delta) for v in self.data[0]):
+            return self.data[0], self.symbols[0], "constant"
         else:
             return self.data, self.symbols, ""
 

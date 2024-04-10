@@ -9,7 +9,7 @@ class data_space:
     Manages the layers of the dataframe, including the potentially new layers found
     when linear relationships are found. Then it runs BACON.1 on the those two columns.
     """
-    def __init__(self, initial_df, layer_method, laws_method, verbose=False):
+    def __init__(self, initial_df, layer_method, laws_method, delta=0.2, verbose=False):
         self.initial_df = initial_df
         self.dfs = [initial_df]
         self.layer_method = layer_method
@@ -17,7 +17,7 @@ class data_space:
         self.verbose = verbose
         self.symbols = list(sum(sym for sym in list(initial_df)).free_symbols)
 
-        self.delta = 0.05
+        self.delta = delta
         self.eqns = []
 
     def run_iterations(self):
@@ -31,6 +31,7 @@ class data_space:
             self.dfs, self.eqns = df_helper.check_const_col(self.dfs, self.eqns,
                                                             self.delta, self.verbose)
 
+            # self.print_dfs()
             for df in self.dfs:
                 layer_in_context = self.layer_method(df, self.laws_method, self.symbols)
                 new_df, self.symbols = layer_in_context.run_single_iteration()

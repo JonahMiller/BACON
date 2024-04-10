@@ -20,8 +20,6 @@ def ParseArgs():
                         help="which dataset would you like to analyse")
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to the dataset")
-    parser.add_argument("--delta", type=float, default=0.1, metavar="d",
-                        help="delta error tolerance for constant values in data space")
     parser.add_argument("--space_of_data", type=str,
                         choices=["bacon.3", "bacon.5", "gp_ranking", "popularity"],
                         default="gp_ranking", metavar="SD",
@@ -30,12 +28,8 @@ def ParseArgs():
                         choices=["bacon.1", "pysr"],
                         default="bacon.1", metavar="SL",
                         help="how to traverse the space of laws")
-    parser.add_argument("--data_space_verbose", action="store_true",
-                        help="activates verbose mode for the data space manager")
-    parser.add_argument("--layer_space_args", type=str, metavar="f1", default=None,
+    parser.add_argument("--additional_args", type=str, metavar="f", default=None,
                         help="json file for args used in space of data setting")
-    parser.add_argument("--laws_space_args", type=str, metavar="f2", default=None,
-                        help="json file for args used in space of laws setting")
     args = parser.parse_args()
     return args
 
@@ -47,22 +41,21 @@ def main():
     init_data, init_symb = data_func(args.noise)
     initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
 
-    if args.layer_space_args:
-        with open(args.layer_space_args, "r") as j:
-            layer_args = json.loads(j.read())
+    if args.additional_args:
+        with open(args.additional_args, "r") as j:
+            all_args = json.loads(j.read())
+            layer_args = all_args["layer_args"]
+            laws_args = all_args["laws_args"]
+            data_space_args = all_args["data_space_args"]
     else:
         layer_args = None
-
-    if args.laws_space_args:
-        with open(args.laws_space_args, "r") as j:
-            laws_args = json.loads(j.read())
-    else:
         laws_args = None
+        data_space_args = None
 
     ds = data_space(initial_df,
                     layer_main(args.space_of_data, layer_args),
                     laws_main(args.space_of_laws, laws_args),
-                    args.data_space_verbose)
+                    **data_space_args)
 
     ds.run_iterations()
 

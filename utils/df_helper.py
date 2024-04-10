@@ -65,6 +65,8 @@ def check_const_col(dfs, eqns, delta, logging):
         col = col.reshape(-1, 3).mean(axis=1)
         mean = fmean(col)
         M = abs(mean)
+        # print(mean, M, M*(1-delta), M*(1+delta), delta)
+        # print(df.columns.tolist()[-1], df.iloc[:, -1].values)
         if all(M*(1 - delta) < abs(v) < M*(1 + delta) for v in df.iloc[:, -1].values):
 
             # if len([v for v in col
