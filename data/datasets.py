@@ -4,24 +4,6 @@ import sympy as sym
 # from data.ode_systems import SIR
 
 
-# FUNCTIONS FOR BACON.1
-
-def kepler(noise=0):
-    n = np.arange(1, 11)
-    P = np.power(n, 3)
-    D = np.power(n, 2)
-    return [P, D], [sym.Symbol("P"), sym.Symbol("D")]
-
-
-def boyle(noise=0):
-    V = np.array([1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 24, 28, 32])
-    P = np.array([29.750, 19.125, 14.375, 9.5, 7.125, 5.625, 4.875, 4.25, 3.75,
-                  3.375, 3, 2.625, 2.25, 2, 1.875, 1.75, 1.5, 1.375, 1.25])
-    return [P, V], [sym.Symbol("P"), sym.Symbol("V")]
-
-
-# FUNCTIONS FOR BACON.3/5:
-
 def basic(noise=0):
     M = np.array(9*[1] + 9*[2] + 9*[3])
     T = np.array(3*(3*[10] + 3*[20] + 3*[30]))
@@ -75,8 +57,6 @@ def black(noise=0):
 def allowed_data():
     data = {
             "basic": basic,
-            "kepler": kepler,
-            "boyle": boyle,
             "ohm": ohm,
             "ideal": ideal,
             "black": black

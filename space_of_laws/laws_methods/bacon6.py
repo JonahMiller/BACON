@@ -1,15 +1,24 @@
 import numpy as np
+from sympy import Symbol
 
 import warnings
 warnings.filterwarnings('ignore')
 
 
+eta = Symbol("eta")
+nu = Symbol("nu")
+
+
 class BACON_6:
-    def __init__(self, X, Y):
-        self.step_size = 1
-        self.N_threshold = 2
-        self.X = X
-        self.Y = Y
+    def __init__(self, initial_df, step_size=1, N_threshold=2):
+        self.init_symbols = list(initial_df)
+        self.data = [initial_df[col_name] for col_name in self.init_symbols]
+        self.symbols = [eta, nu]
+        self.step_size = step_size
+        self.N_threshold = N_threshold
+
+        self.X = self.data[0]
+        self.Y = self.data[1]
 
     def generate_initial_vars(self):
         vals = [-1, 0, 1]
