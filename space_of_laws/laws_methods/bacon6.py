@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from sympy import Symbol, lambdify, simplify
 from sympy.parsing.sympy_parser import parse_expr
 from itertools import product
@@ -60,7 +59,6 @@ class BACON_6:
                 r = np.corrcoef(self.Y, f_Y(self.X))[0, 1]
             else:
                 r = np.corrcoef(self.Y, [float(Y_)]*len(self.X))[0, 1]
-
             if r not in state_dict:
                 state_dict[r] = np.array(list(vars))
                 self.sort_threshold(idx, r)
@@ -79,7 +77,7 @@ class BACON_6:
 
     def main(self):
         self.states = self.generate_vars()
-        while self.step > 0.0001:
+        while self.step > 0.000001:
             self.calculate_approx()
             self.update_states()
         self.N_threshold = 1
@@ -109,11 +107,3 @@ class BACON_6:
                 continue
         letter = Symbol(letters[0])
         return letter
-
-
-if __name__ == "__main__":
-    X = np.array([1, 3, 6, 10, 15, 24])
-    Y = 2*X/(1+4*X) + 0.1*np.random.normal(0, 1, 6)
-    initial_df = pd.DataFrame({Symbol("X"): X, Symbol("Y"): Y})
-    bacon = BACON_6(initial_df, [Symbol("X"), Symbol("Y")])
-    bacon.main()

@@ -12,7 +12,7 @@ from bacon6 import BACON_6  # noqa: E402
 def kepler(noise=0):
     n = np.arange(1, 11)
     P = np.power(n, 3)
-    D = np.power(n, 2) + noise*np.random.normal(0, 1, 11)
+    D = np.power(n, 2) + noise*np.random.normal(0, 1, 10)
     return [P, D], [Symbol("P"), Symbol("D")]
 
 
@@ -50,10 +50,26 @@ def lotka_volterra(alpha, beta, gamma, delta, x_0, y_0, Nt=1000, tmax=30., noise
 
 
 if __name__ == "__main__":
-    init_data, init_symb = birthday(0)
+    # init_data, init_symb = birthday(0)
+    # initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
+    # expression = "j*X**(3/2) + k*X + l*X**(1/2)"
+    # unknowns = ["j", "k", "l"]
+    # bacon = BACON_6(initial_df, [Symbol("X"), Symbol("Y")],
+    #                 expression=expression, unknowns=unknowns, step=2, N_threshold=4)
+    # bacon.main()
+
+    init_data, init_symb = boyle(0)
     initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
-    expression = "j*X**(3/2) + k*X + l*X**(1/2)"
-    unknowns = ["j", "k", "l"]
+    expression = "j/X"
+    unknowns = ["j"]
+    bacon = BACON_6(initial_df, [Symbol("X"), Symbol("Y")],
+                    expression=expression, unknowns=unknowns, step=2, N_threshold=4)
+    bacon.main()
+
+    init_data, init_symb = kepler(0)
+    initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
+    expression = "j*X**(2/3)"
+    unknowns = ["j"]
     bacon = BACON_6(initial_df, [Symbol("X"), Symbol("Y")],
                     expression=expression, unknowns=unknowns, step=2, N_threshold=4)
     bacon.main()
