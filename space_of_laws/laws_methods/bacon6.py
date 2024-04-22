@@ -17,21 +17,19 @@ class BACON_6:
                  step=2, N_threshold=2):
         self.init_symbols = list(initial_df)
         self.data = [initial_df[col_name] for col_name in self.init_symbols]
-        self.symbols = [eta, nu]
         self.all_found_symbols = all_found_symbols
 
         self.step = step
         self.N_threshold = N_threshold
-
-        self.X = self.data[0]
-        self.Y = self.data[1]
+        self.nu = self.data[0]
+        self.eta = self.data[1]
 
         self.parse_expression(expression, unknowns)
 
     def parse_expression(self, expression, unknowns):
         if not expression or not unknowns:
-            expression = "w*X + x + y/(X+z)"
-            unknowns = ["w", "x", "y", "z"]
+            expression = "x*nu + y/nu"
+            unknowns = ["x", "y"]
         self.expr = parse_expr(expression)
         self.unknowns = [Symbol(u) for u in unknowns]
         self.n = len(unknowns)
@@ -53,12 +51,12 @@ class BACON_6:
         state_dict = {}
         self.min = 0
         for idx, vars in enumerate(self.states):
-            Y_ = self.expr.subs(dict(zip(self.unknowns, vars)))
-            if Symbol("X") in Y_.free_symbols:
-                f_Y = lambdify([Symbol("X")], Y_)
-                r = np.corrcoef(self.Y, f_Y(self.X))[0, 1]
+            eta_ = self.expr.subs(dict(zip(self.unknowns, vars)))
+            if nu in eta_.free_symbols:
+                f_eta = lambdify([nu], eta_)
+                r = np.corrcoef(self.eta, f_eta(self.nu))[0, 1]
             else:
-                r = np.corrcoef(self.Y, [float(Y_)]*len(self.X))[0, 1]
+                r = np.corrcoef(self.eta, [float(eta_)]*len(self.nu))[0, 1]
             if r not in state_dict:
                 state_dict[r] = np.array(list(vars))
                 self.sort_threshold(idx, r)
@@ -85,25 +83,10 @@ class BACON_6:
         self.output_variables()
 
     def output_variables(self):
-        Y_ = self.expr.subs(dict(zip(self.unknowns, self.states[0])))
-        if Symbol("X") in Y_.free_symbols:
-            f_Y = lambdify([Symbol("X")], Y_)
-            m, d = np.polyfit(f_Y(self.X), self.Y, 1)
+        eta_ = self.expr.subs(dict(zip(self.unknowns, self.states[0])))
+        if nu in eta_.free_symbols:
+            f_eta = lambdify([nu], eta_)
+            m, d = np.polyfit(f_eta(self.nu), self.eta, 1)
         else:
-            m, d = np.polyfit([float(Y_)]*len(self.X), self.Y, 1)
-        print(f"Y = {simplify(parse_expr(f'{m}*({Y_}) + {d}'))}")
-
-    def new_symbol(self):
-        '''
-        Draws new variables to use in the case of linear relationships. Starts with
-        "a" and draws onwards in the alphabet.
-        '''
-        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        for sym in self.all_found_symbols:
-            try:
-                idx = letters.index(str(sym))
-                letters = letters[idx + 1:]
-            except ValueError:
-                continue
-        letter = Symbol(letters[0])
-        return letter
+            m, d = np.polyfit([float(eta_)]*len(self.nu), self.eta, 1)
+        print(f"{self.init_symbols[1]} = {simplify(parse_expr(f'{m}*({eta_}) + {d}')).subs(nu, self.init_symbols[0])}")

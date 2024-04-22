@@ -16,6 +16,13 @@ def kepler(noise=0):
     return [P, D], [Symbol("P"), Symbol("D")]
 
 
+def ideal(noise=0):
+    a = 2
+    P = np.array([10, 20, 30])
+    V = a/P + noise*np.random.normal(0, 1, 3)
+    return [P, V], [Symbol("P"), Symbol("V")]
+
+
 def boyle(noise=0):
     V = np.array([1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 24, 28, 32])
     P = np.array([29.750, 19.125, 14.375, 9.5, 7.125, 5.625, 4.875, 4.25, 3.75,
@@ -49,27 +56,31 @@ def lotka_volterra(alpha, beta, gamma, delta, x_0, y_0, Nt=1000, tmax=30., noise
     return [X, Y*X], [Symbol("X"), Symbol("Y")]
 
 
+def run_bacon_6(function, expression=None, unknowns=None,
+                noise=0, steps=2, N_threshold=4):
+    init_data, init_symb = function(noise)
+    initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
+    bacon = BACON_6(initial_df, init_symb,
+                    expression=expression, unknowns=unknowns,
+                    step=steps, N_threshold=N_threshold)
+    bacon.main()
+
+
 if __name__ == "__main__":
-    # init_data, init_symb = birthday(0)
-    # initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
-    # expression = "j*X**(3/2) + k*X + l*X**(1/2)"
-    # unknowns = ["j", "k", "l"]
-    # bacon = BACON_6(initial_df, [Symbol("X"), Symbol("Y")],
-    #                 expression=expression, unknowns=unknowns, step=2, N_threshold=4)
-    # bacon.main()
+    run_bacon_6(birthday,
+                expression="j*nu**(3/2) + k*nu + l*nu**(1/2)",
+                unknowns=["j", "k", "l"])
 
-    init_data, init_symb = boyle(0)
-    initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
-    expression = "j/X"
-    unknowns = ["j"]
-    bacon = BACON_6(initial_df, [Symbol("X"), Symbol("Y")],
-                    expression=expression, unknowns=unknowns, step=2, N_threshold=4)
-    bacon.main()
+    run_bacon_6(boyle,
+                expression="j/nu",
+                unknowns=["j"])
 
-    init_data, init_symb = kepler(0)
-    initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
-    expression = "j*X**(2/3)"
-    unknowns = ["j"]
-    bacon = BACON_6(initial_df, [Symbol("X"), Symbol("Y")],
-                    expression=expression, unknowns=unknowns, step=2, N_threshold=4)
-    bacon.main()
+    run_bacon_6(kepler,
+                expression="j*nu**(2/3)",
+                unknowns=["j"])
+
+    run_bacon_6(ideal)
+    run_bacon_6(ideal,
+                noise=0.01)
+    run_bacon_6(ideal,
+                noise=0.1)

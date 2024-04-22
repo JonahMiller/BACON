@@ -25,10 +25,8 @@ class BACON_1:
         '''
         Runs the BACON iterations and returns the constant variables with its value.
         If the program already has constants they're returned. A maximum complexity
-        that can be found is induced by j = 10. If there is no update on the bacon
+        that can be found is induced by j = 5. If there is no update on the bacon
         iterations, the program returns the last data/symbol founds.
-
-        TODO: update how the fail returns in the latter case above.
         '''
         self.lin_data = None
         init_d, init_sy, self.update = self.initial_constant()
@@ -54,7 +52,7 @@ class BACON_1:
         Checks if any variables are initialised as constant.
         '''
         M_1 = fmean(self.data[0])
-        if all(M_1*(1 - self.delta) < abs(v) < M_1*(1 + self.delta) for v in self.data[0]):
+        if all(abs(M_1)*(1 - self.delta) < abs(v) < abs(M_1)*(1 + self.delta) for v in self.data[0]):
             return self.data[0], self.symbols[0], "constant"
         else:
             return self.data, self.symbols, ""
