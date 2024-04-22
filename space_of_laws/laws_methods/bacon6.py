@@ -52,11 +52,20 @@ class BACON_6:
         self.min = 0
         for idx, vars in enumerate(self.states):
             eta_ = self.expr.subs(dict(zip(self.unknowns, vars)))
-            if nu in eta_.free_symbols:
+            fs = eta_.free_symbols
+
+            if nu in fs and eta not in fs:
                 f_eta = lambdify([nu], eta_)
                 r = np.corrcoef(self.eta, f_eta(self.nu))[0, 1]
+            elif nu not in fs and eta in fs:
+                f_eta = lambdify([eta], eta_)
+                r = np.corrcoef(self.eta, f_eta(self.eta))[0, 1]
+            elif nu in fs and eta in fs:
+                f_eta = lambdify([nu, eta], eta_)
+                r = np.corrcoef(self.eta, f_eta(self.nu, self.eta))[0, 1]
             else:
                 r = np.corrcoef(self.eta, [float(eta_)]*len(self.nu))[0, 1]
+
             if r not in state_dict:
                 state_dict[r] = np.array(list(vars))
                 self.sort_threshold(idx, r)
@@ -84,9 +93,19 @@ class BACON_6:
 
     def output_variables(self):
         eta_ = self.expr.subs(dict(zip(self.unknowns, self.states[0])))
-        if nu in eta_.free_symbols:
+        fs = eta_.free_symbols
+
+        if nu in fs and eta not in fs:
             f_eta = lambdify([nu], eta_)
             m, d = np.polyfit(f_eta(self.nu), self.eta, 1)
+        elif nu not in fs and eta in fs:
+            f_eta = lambdify([eta], eta_)
+            m, d = np.polyfit(f_eta(self.eta), self.eta, 1)
+        elif nu in fs and eta in fs:
+            f_eta = lambdify([nu, eta], eta_)
+            m, d = np.polyfit(f_eta(self.nu, self.eta), self.eta, 1)
         else:
             m, d = np.polyfit([float(eta_)]*len(self.nu), self.eta, 1)
-        print(f"{self.init_symbols[1]} = {simplify(parse_expr(f'{m}*({eta_}) + {d}')).subs(nu, self.init_symbols[0])}")
+
+        expr = parse_expr(f'{m}*({eta_}) + {d}').subs(nu, self.init_symbols[0]).subs(eta, self.init_symbols[1])
+        print(f"{self.init_symbols[1]} = {simplify(expr)}")

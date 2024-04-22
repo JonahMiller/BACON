@@ -52,8 +52,10 @@ def lotka_volterra(alpha, beta, gamma, delta, x_0, y_0, Nt=1000, tmax=30., noise
     X_0 = [x_0, y_0]
     res = integrate.odeint(derivative, X_0, t, args=(alpha, beta, delta, gamma))
     X, Y = res.T
-    Y = Y + noise*np.random.normal(0, 1, Nt)
-    return [X, Y*X], [Symbol("X"), Symbol("Y")]
+    X = [X[idx] for idx in range(len(X)) if idx % 100 == 0]
+    Y = [Y[idx] for idx in range(len(Y)) if idx % 100 == 0]
+    Y = Y + noise*np.random.normal(0, 1, 10)
+    return [X, Y], [Symbol("X"), Symbol("Y")]
 
 
 def run_bacon_6(function, expression=None, unknowns=None,
@@ -67,20 +69,24 @@ def run_bacon_6(function, expression=None, unknowns=None,
 
 
 if __name__ == "__main__":
-    run_bacon_6(birthday,
-                expression="j*nu**(3/2) + k*nu + l*nu**(1/2)",
+    # run_bacon_6(birthday,
+    #             expression="j*nu**(3/2) + k*nu + l*nu**(1/2)",
+    #             unknowns=["j", "k", "l"])
+
+    # run_bacon_6(boyle,
+    #             expression="j/nu",
+    #             unknowns=["j"])
+
+    # run_bacon_6(kepler,
+    #             expression="j*nu**(2/3)",
+    #             unknowns=["j"])
+
+    # run_bacon_6(ideal)
+    # run_bacon_6(ideal,
+    #             noise=0.01)
+    # run_bacon_6(ideal,
+    #             noise=0.1)
+
+    run_bacon_6(lambda n: lotka_volterra(1, 0.1, 0.2, 0.5, 10, 10, noise=n),
+                expression="j*nu + k*ln(nu) + l*ln(eta)",
                 unknowns=["j", "k", "l"])
-
-    run_bacon_6(boyle,
-                expression="j/nu",
-                unknowns=["j"])
-
-    run_bacon_6(kepler,
-                expression="j*nu**(2/3)",
-                unknowns=["j"])
-
-    run_bacon_6(ideal)
-    run_bacon_6(ideal,
-                noise=0.01)
-    run_bacon_6(ideal,
-                noise=0.1)
