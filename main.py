@@ -25,7 +25,7 @@ def ParseArgs():
                         default="gp_ranking", metavar="SD",
                         help="how to traverse the space of data")
     parser.add_argument("--space_of_laws", type=str,
-                        choices=["bacon.1", "pysr"],
+                        choices=["bacon.1", "bacon.6", "pysr"],
                         default="bacon.1", metavar="SL",
                         help="how to traverse the space of laws")
     parser.add_argument("--additional_args", type=str, metavar="f", default=None,

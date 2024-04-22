@@ -47,6 +47,8 @@ class data_space:
 
             self.dfs = new_dfs
 
+        # self.print_dfs()
+
         constants = []
         for df in self.dfs:
             # When only 2 columns left do final calculation

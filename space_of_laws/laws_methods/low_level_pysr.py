@@ -36,5 +36,7 @@ class PYSR:
         model.fit(X, y)
         eqn_rhs = simplify(model.sympy())
 
+        print(eqn_rhs)
+
         correct_equation_form = laws_helper.return_equation(eqn_rhs, self.symbols, self.all_found_symbols)
         return correct_equation_form.compute()

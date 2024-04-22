@@ -59,19 +59,19 @@ def lotka_volterra(alpha, beta, gamma, delta, x_0, y_0, Nt=1000, tmax=30., noise
 
 
 def run_bacon_6(function, expression=None, unknowns=None,
-                noise=0, steps=2, N_threshold=4):
+                noise=0, steps=2, N_threshold=1):
     init_data, init_symb = function(noise)
     initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
     bacon = BACON_6(initial_df, init_symb,
                     expression=expression, unknowns=unknowns,
                     step=steps, N_threshold=N_threshold)
-    bacon.main()
+    bacon.run_iteration()
 
 
 if __name__ == "__main__":
-    # run_bacon_6(birthday,
-    #             expression="j*nu**(3/2) + k*nu + l*nu**(1/2)",
-    #             unknowns=["j", "k", "l"])
+    run_bacon_6(birthday,
+                expression="j*nu**(3/2) + k*nu + l*nu**(1/2)",
+                unknowns=["j", "k", "l"])
 
     # run_bacon_6(boyle,
     #             expression="j/nu",
@@ -87,6 +87,7 @@ if __name__ == "__main__":
     # run_bacon_6(ideal,
     #             noise=0.1)
 
-    run_bacon_6(lambda n: lotka_volterra(1, 0.1, 0.2, 0.5, 10, 10, noise=n),
-                expression="j*nu + k*ln(nu) + l*ln(eta)",
-                unknowns=["j", "k", "l"])
+    # run_bacon_6(lambda n: lotka_volterra(1, 0.1, 0.2, 0.5, 10, 10, noise=n),
+    #             noise=0.1,
+    #             expression="j*nu + k*ln(nu) + l*ln(eta)",
+    #             unknowns=["j", "k", "l"])
