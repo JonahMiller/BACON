@@ -1,0 +1,8 @@
+{
+    "layer_args": {"verbose": true},
+
+    "laws_args": {},
+
+    "data_space_args": {"delta": 0.1,
+                        "verbose": false}
+}
