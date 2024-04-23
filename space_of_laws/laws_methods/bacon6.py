@@ -16,7 +16,7 @@ nu = Symbol("nu")
 class BACON_6:
     def __init__(self, initial_df, all_found_symbols,
                  expression=None, unknowns=None,
-                 step=2, N_threshold=1):
+                 step=2, N_threshold=1, bacon_6_info=False):
         print(initial_df)
         self.symbols = list(initial_df)
         self.data = [initial_df[col_name] for col_name in self.symbols]
@@ -24,10 +24,10 @@ class BACON_6:
 
         self.step = step
         self.N_threshold = N_threshold
+        self.info = bacon_6_info
 
         self.eta = self.data[0]
         self.nu = self.data[1]
-
         self.parse_expression(expression, unknowns)
 
     def parse_expression(self, expression, unknowns):
@@ -60,15 +60,15 @@ class BACON_6:
 
             if nu in fs and eta not in fs:
                 f_eta = lambdify([nu], eta_)
-                r = np.corrcoef(self.eta, f_eta(self.nu))[0, 1]
+                r = np.corrcoef(f_eta(self.nu), self.eta)[0, 1]
             elif nu not in fs and eta in fs:
                 f_eta = lambdify([eta], eta_)
-                r = np.corrcoef(self.eta, f_eta(self.eta))[0, 1]
+                r = np.corrcoef(f_eta(self.eta), self.eta)[0, 1]
             elif nu in fs and eta in fs:
                 f_eta = lambdify([nu, eta], eta_)
-                r = np.corrcoef(self.eta, f_eta(self.nu, self.eta))[0, 1]
+                r = np.corrcoef(f_eta(self.nu, self.eta), self.eta)[0, 1]
             else:
-                r = np.corrcoef(self.eta, [float(eta_)]*len(self.nu))[0, 1]
+                r = np.corrcoef([float(eta_)]*len(self.nu), self.eta)[0, 1]
 
             if r not in state_dict:
                 state_dict[r] = np.array(list(vars))
@@ -88,29 +88,27 @@ class BACON_6:
 
     def output_variables(self):
         results_dict = dict(zip(self.unknowns, self.states[0]))
-
         eta_ = self.expr.subs(results_dict)
         fs = eta_.free_symbols
-
         if nu in fs and eta not in fs:
             f_eta = lambdify([nu], eta_)
-            m, d = np.polyfit(f_eta(self.nu), self.eta, 1)
+            m, c = np.polyfit(f_eta(self.nu), self.eta, 1)
         elif nu not in fs and eta in fs:
             f_eta = lambdify([eta], eta_)
-            m, d = np.polyfit(f_eta(self.eta), self.eta, 1)
+            m, c = np.polyfit(f_eta(self.eta), self.eta, 1)
         elif nu in fs and eta in fs:
             f_eta = lambdify([nu, eta], eta_)
-            m, d = np.polyfit(f_eta(self.nu, self.eta), self.eta, 1)
+            m, c = np.polyfit(f_eta(self.nu, self.eta), self.eta, 1)
         else:
-            m, d = np.polyfit([float(eta_)]*len(self.nu), self.eta, 1)
+            m, c = np.polyfit([float(eta_)]*len(self.nu), self.eta, 1)
+        if abs(c) < 0.00001:
+            c = 0
+        expr = parse_expr(f"{m}*{eta_} + {c}")
 
-        if abs(d) < 0.00001:
-            d = 0
-        print(self.states[0])
-        print(m, d, eta_)
+        if self.info:
+            final_expr = simplify(expr.subs(eta, self.symbols[0]).subs(nu, self.symbols[1]))
+            print(f"BACON 6: Expression determined is {self.symbols[0]} = {final_expr}")
 
-        expr = parse_expr(f"{m}*{eta_} + {d}")
-        print(f"{self.symbols[1]} = {simplify(expr.subs(nu, self.symbols[0]).subs(eta, self.symbols[1]))}")
         return expr
 
     def run_iteration(self):

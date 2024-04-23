@@ -12,7 +12,8 @@ nu = Symbol("nu")
 
 
 class BACON_1:
-    def __init__(self, initial_df, all_found_symbols, epsilon=0.001, delta=0.1, bacon_1_info=False):
+    def __init__(self, initial_df, all_found_symbols,
+                 epsilon=0.001, delta=0.1, bacon_1_info=False):
         self.init_symbols = list(initial_df)
         self.all_found_symbols = all_found_symbols
         self.data = [initial_df[col_name] for col_name in self.init_symbols]

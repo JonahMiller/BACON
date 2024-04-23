@@ -26,7 +26,7 @@ def bacon_1(df, col_1, col_2, all_found_symbols,
 
 def bacon_6(df, col_1, col_2, all_found_symbols,
             verbose=False, expression=None, unknowns=None,
-            steps=2, N_threshold=3):
+            steps=8, N_threshold=3):
     """
     Runs an instance of BACON.6 on the specified columns
     col_1 and col_2 in the specified dataframe df.

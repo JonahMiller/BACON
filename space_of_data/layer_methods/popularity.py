@@ -20,7 +20,6 @@ class popular_layer:
             ave_df = df_helper.average_df(df)
             data, symb, lin = self.laws_method(ave_df, ave_df.columns[-1],
                                                ave_df.columns[-2], self.symbols)
-
             if isinstance(lin, list):
                 symb = lin[2]
 

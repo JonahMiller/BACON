@@ -27,12 +27,14 @@ class return_equation:
         self.rhs = eqn_rhs
         self.symbols = symbols
         self.all_found_symbols = all_found_symbols
-
-        print(self.rhs)
+        self.nonlinear = False
 
     def compute(self):
-        eqn = Eq(eta, self.rhs)
+        if self.nonlinear:
+            print("Unable to deal with non-linear relationship, returning blank")
+            return None, None, None
 
+        eqn = Eq(eta, self.rhs)
         rhs_symb, terms = self.rhs.count(nu), len(Add.make_args(self.rhs))
 
         if rhs_symb == 0:
@@ -53,9 +55,11 @@ class return_equation:
 
         elif rhs_symb == 2:
             num, den = fraction(eqn.rhs)
-            if len(Add.make_args(den)) == 2:
-                if terms == 1:
+            if terms == 1:
+                if len(Add.make_args(den)) == 2:
                     return self.complex_linear_1_term(eqn)
+            elif terms == 2 or terms == 3:
+                self.eliminate_smaller_coeffs(eqn)
             else:
                 print("Unable to deal with non-linear relationship, returning blank")
                 return None, None, None
@@ -83,6 +87,7 @@ class return_equation:
         coeff, var1, var2 = self.linear_term_coeff(expr)
         k = new_symbol(self.all_found_symbols)
         lin_data = ["linear", k, var1 - nsimplify(k*var2), -coeff, var1, var2]
+        print([coeff], self.subs_expr(expr), lin_data)
         return [coeff], self.subs_expr(expr), lin_data
 
     def complex_linear_1_term(self, eqn):
@@ -102,6 +107,7 @@ class return_equation:
                     if isinstance(ar, Number):
                         bot_coeff = ar
 
+        # TODO: check if below is working as expected.
         if abs(const/bot_coeff) < 0.0001:
             new_rhs = num/(bot_coeff*var)
             new_eqn = Eq(eqn.lhs, new_rhs)
@@ -133,6 +139,56 @@ class return_equation:
                 var1 = arg
                 coeff = 1
         return coeff, self.subs_expr(var1), self.subs_expr(var2)
+
+    def eliminate_smaller_coeffs(self, eqn):
+        '''
+        Assumes form of eta = a*nu + b + c/(nu + d)
+        '''
+        arg_list = Add.make_args(eqn.rhs)
+        b = 0
+        for arg in arg_list:
+            num, den = fraction(arg)
+            if len(Add.make_args(den)) == 1:
+                if isinstance(arg, Number):
+                    b = arg
+                else:
+                    a = 1
+                    for ar in list(arg.args):
+                        if isinstance(ar, Number):
+                            a = ar
+            else:
+                c = num
+                bot_coeff = 1
+                for arg in list(den.args):
+                    if isinstance(arg, Number):
+                        d = arg
+                    else:
+                        for ar in list(arg.args):
+                            if isinstance(ar, Number):
+                                bot_coeff = ar
+
+        a, b, c, d = a, b, c/bot_coeff, d/bot_coeff
+
+        if abs(d) < 0.0001:
+            d = 0
+        if b == 0:
+            b = 1e-15
+
+        if abs(a/c) > 100 or abs(b/c) > 100:
+            if abs(a/b) > 100:
+                self.rhs = a*nu
+            elif abs(b/a) > 100:
+                self.rhs = b
+            else:
+                self.rhs = a*nu + b
+        elif abs(c/a) > 100:
+            if abs(c/b) < 100 and d == 0:
+                self.rhs = b + c/(nu)
+            elif abs(c/b) > 100:
+                self.rhs = c/(nu + d)
+        else:
+            self.nonlinear = True
+        self.compute()
 
     def subs_expr(self, expr):
         return expr.subs(eta, self.symbols[0]).subs(nu, self.symbols[1])
