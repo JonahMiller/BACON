@@ -13,12 +13,12 @@ nu = Symbol("nu")
 
 class BACON_1:
     def __init__(self, initial_df, all_found_symbols,
-                 epsilon=0.001, delta=0.1, bacon_1_info=False):
+                 epsilon=0.001, delta=0.1, verbose=False):
         self.init_symbols = list(initial_df)
         self.all_found_symbols = all_found_symbols
         self.data = [initial_df[col_name] for col_name in self.init_symbols]
         self.symbols = [eta, nu]
-        self.info = bacon_1_info
+        self.verbose = verbose
         self.epsilon = epsilon
         self.delta = delta
 
@@ -100,7 +100,7 @@ class BACON_1:
         M = fmean(data)
         if all(M*(1 - self.delta) < val < M*(1 + self.delta) for val in data):
             self.update = "constant"
-            if self.info:
+            if self.verbose:
                 print(f"BACON 1: {symbol} is constant within our error")
 
     def linear(self, symbol_1, symbol_2, data_1, data_2):
@@ -114,7 +114,7 @@ class BACON_1:
         k = self.new_symbol()
         self.lin_data = ["linear", k, self.subs_expr(symbol_2 - k*symbol_1),
                          m, self.subs_expr(symbol_2), self.subs_expr(symbol_1)]
-        if self.info:
+        if self.verbose:
             print(f"BACON 1: {symbol_2} is linearly prop. to {symbol_1},")
             print(f"         we then see {self.symbols[-1]} is constant")
 
@@ -125,7 +125,7 @@ class BACON_1:
         self.symbols.append(simplify(symbol_1*symbol_2))
         self.data.append(data_1*data_2)
         self.update = "product"
-        if self.info:
+        if self.verbose:
             print(f"BACON 1: {symbol_1} increases whilst {symbol_2} decreases,")
             print(f"         considering new variable {simplify(symbol_1*symbol_2)}")
 
@@ -136,7 +136,7 @@ class BACON_1:
         self.symbols.append(simplify(symbol_1/symbol_2))
         self.data.append(data_1/data_2)
         self.update = "division"
-        if self.info:
+        if self.verbose:
             print(f"BACON 1: {symbol_1} increases whilst {symbol_2} increases,")
             print(f"         considering new variable {simplify(symbol_1/symbol_2)}")
 

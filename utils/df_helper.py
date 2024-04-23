@@ -97,18 +97,18 @@ def deconstruct_df(df):
 
 
 def average_df(df):
-    rows = len(df.index)
-    if rows != 3:
-        var_name = df.columns.tolist()[-1]
-        mean, idx = [], []
-        for i in range(3):
-            row_vals = df.iloc[i*int(rows/3):(i+1)*int(rows/3), -1].values.tolist()
-            mean.append(fmean(row_vals))
-            idx.append(i*int(rows/3))
-        n_df = df.iloc[idx, :-1]
-        var_df = pd.DataFrame({var_name: mean}, index=n_df.index)
-        return n_df.join(var_df)
-    return df
+    if len(df.index) == 3:
+        return df
+    else:
+        col_0, col_1 = df.columns[-2], df.columns[-1]
+        unique_vals = df[col_0].unique()
+        return_df = pd.DataFrame()
+        for val in unique_vals:
+            mini_df = df.loc[df[col_0] == val]
+            n_df = mini_df.iloc[:, :-1]
+            n_df[col_1] = np.mean(mini_df[mini_df.columns[-1]])
+            return_df = pd.concat((return_df, n_df))
+        return return_df
 
 
 def linear_relns(df, dummy_sym, expr_sym):

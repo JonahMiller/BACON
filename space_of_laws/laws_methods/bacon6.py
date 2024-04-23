@@ -16,15 +16,16 @@ nu = Symbol("nu")
 class BACON_6:
     def __init__(self, initial_df, all_found_symbols,
                  expression=None, unknowns=None,
-                 step=2, N_threshold=1, bacon_6_info=False):
-        print(initial_df)
+                 step=2, N_threshold=1,
+                 verbose=False, return_print=False):
         self.symbols = list(initial_df)
         self.data = [initial_df[col_name] for col_name in self.symbols]
         self.all_found_symbols = all_found_symbols
 
         self.step = step
         self.N_threshold = N_threshold
-        self.info = bacon_6_info
+        self.verbose = verbose
+        self.return_print = return_print
 
         self.eta = self.data[0]
         self.nu = self.data[1]
@@ -103,9 +104,9 @@ class BACON_6:
             m, c = np.polyfit([float(eta_)]*len(self.nu), self.eta, 1)
         if abs(c) < 0.00001:
             c = 0
-        expr = parse_expr(f"{m}*{eta_} + {c}")
+        expr = parse_expr(f"{m*eta_} + {c}")
 
-        if self.info:
+        if self.verbose:
             final_expr = simplify(expr.subs(eta, self.symbols[0]).subs(nu, self.symbols[1]))
             print(f"BACON 6: Expression determined is {self.symbols[0]} = {final_expr}")
 
@@ -119,5 +120,11 @@ class BACON_6:
         self.N_threshold = 1
         self.calculate_approx()
         eqn_rhs = self.output_variables()
-        correct_equation_form = laws_helper.return_equation(eqn_rhs, self.symbols, self.all_found_symbols)
+
+        if self.return_print:
+            return None, [self.symbols[0], eqn_rhs], "print"
+
+        correct_equation_form = laws_helper.return_equation(eqn_rhs, self.symbols,
+                                                            self.all_found_symbols,
+                                                            self.verbose)
         return correct_equation_form.compute()

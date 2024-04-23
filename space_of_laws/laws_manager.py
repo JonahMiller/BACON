@@ -20,13 +20,13 @@ def bacon_1(df, col_1, col_2, all_found_symbols,
             print(f"Laws manager: Running BACON 1 on variables [{col_1}, {col_2}]")
     bacon_1_instance = BACON_1(df[[col_1, col_2]], all_found_symbols,
                                epsilon, delta,
-                               bacon_1_info=verbose)
+                               verbose=verbose)
     return bacon_1_instance.bacon_iterations()
 
 
 def bacon_6(df, col_1, col_2, all_found_symbols,
             verbose=False, expression=None, unknowns=None,
-            steps=8, N_threshold=3):
+            step=32, N_threshold=3, return_print=False):
     """
     Runs an instance of BACON.6 on the specified columns
     col_1 and col_2 in the specified dataframe df.
@@ -42,11 +42,12 @@ def bacon_6(df, col_1, col_2, all_found_symbols,
             print(f"Laws manager: Running BACON 6 on variables [{col_1}, {col_2}]")
     bacon_6_instance = BACON_6(df[[col_1, col_2]], all_found_symbols,
                                expression=expression, unknowns=unknowns,
-                               step=steps, N_threshold=N_threshold)
+                               step=step, N_threshold=N_threshold,
+                               verbose=verbose, return_print=return_print)
     return bacon_6_instance.run_iteration()
 
 
-def pysr(df, col_1, col_2, all_found_symbols, verbose=False):
+def pysr(df, col_1, col_2, all_found_symbols, verbose=False, return_print=False):
     if verbose:
         unused_df = df.iloc[:, :-2]
         col_names = unused_df.columns.tolist()
@@ -56,7 +57,8 @@ def pysr(df, col_1, col_2, all_found_symbols, verbose=False):
             print(f"              unused variables {col_names} set as {col_ave}.")
         else:
             print(f"Laws manager: Running PySR on variables [{col_1}, {col_2}]")
-    pysr_instance = PYSR(df[[col_1, col_2]], all_found_symbols)
+    pysr_instance = PYSR(df[[col_1, col_2]], all_found_symbols,
+                         verbose=verbose, return_print=return_print)
     return pysr_instance.run_iteration()
 
 

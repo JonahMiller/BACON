@@ -23,17 +23,13 @@ def new_symbol(all_found_symbols):
 
 
 class return_equation:
-    def __init__(self, eqn_rhs, symbols, all_found_symbols):
+    def __init__(self, eqn_rhs, symbols, all_found_symbols, verbose=False):
         self.rhs = eqn_rhs
         self.symbols = symbols
         self.all_found_symbols = all_found_symbols
-        self.nonlinear = False
+        self.info = verbose
 
     def compute(self):
-        if self.nonlinear:
-            print("Unable to deal with non-linear relationship, returning blank")
-            return None, None, None
-
         eqn = Eq(eta, self.rhs)
         rhs_symb, terms = self.rhs.count(nu), len(Add.make_args(self.rhs))
 
@@ -50,7 +46,8 @@ class return_equation:
             elif terms == 2:
                 return self.simple_linear(eqn)
             else:
-                print("Unable to deal with non-linear relationship, returning blank")
+                if self.info:
+                    print("Unable to deal with non-linear relationship, returning blank")
                 return None, None, None
 
         elif rhs_symb == 2:
@@ -59,13 +56,15 @@ class return_equation:
                 if len(Add.make_args(den)) == 2:
                     return self.complex_linear_1_term(eqn)
             elif terms == 2 or terms == 3:
-                self.eliminate_smaller_coeffs(eqn)
+                return self.eliminate_smaller_coeffs(eqn)
             else:
-                print("Unable to deal with non-linear relationship, returning blank")
+                if self.info:
+                    print("Unable to deal with non-linear relationship, returning blank")
                 return None, None, None
 
         else:
-            print("Unable to deal with non-linear relationship, returning blank")
+            if self.info:
+                print("Unable to deal with non-linear relationship, returning blank")
             return None, None, None
 
     def single_product_division(self, eqn):
@@ -94,7 +93,8 @@ class return_equation:
         num, den = fraction(eqn.rhs)
 
         if len(Add.make_args(num)) != 1:
-            print("Unable to deal with non-linear relationship, returning blank")
+            if self.info:
+                print("Unable to deal with non-linear relationship, returning blank")
             return None, None, None
 
         bot_coeff = 1
@@ -176,19 +176,27 @@ class return_equation:
 
         if abs(a/c) > 100 or abs(b/c) > 100:
             if abs(a/b) > 100:
-                self.rhs = a*nu
+                return self.single_product_division(Eq(eta, a*nu))
             elif abs(b/a) > 100:
-                self.rhs = b
+                return [b], self.symbols[0], ""
             else:
-                self.rhs = a*nu + b
+                return self.simple_linear(Eq(eta, a*nu + b))
         elif abs(c/a) > 100:
-            if abs(c/b) < 100 and d == 0:
-                self.rhs = b + c/(nu)
+            if abs(c/b) < 100 and d == 0 and b != 1e-15:
+                return self.simple_linear(Eq(eta, b + c/(nu)))
             elif abs(c/b) > 100:
-                self.rhs = c/(nu + d)
+                if d == 0:
+                    return self.single_product_division(Eq(eta, c/nu))
+                else:
+                    return self.complex_linear_1_term(Eq(eta, c/(nu + d)))
+            else:
+                if self.info:
+                    print("Unable to deal with non-linear relationship, returning blank")
+                return None, None, None
         else:
-            self.nonlinear = True
-        self.compute()
+            if self.info:
+                print("Unable to deal with non-linear relationship, returning blank")
+            return None, None, None
 
     def subs_expr(self, expr):
         return expr.subs(eta, self.symbols[0]).subs(nu, self.symbols[1])

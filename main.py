@@ -22,7 +22,7 @@ def ParseArgs():
                         help="how much noise to add to the dataset")
     parser.add_argument("--space_of_data", type=str,
                         choices=["bacon.3", "bacon.5", "gp_ranking", "popularity"],
-                        default="gp_ranking", metavar="SD",
+                        default=None, metavar="SD",
                         help="how to traverse the space of data")
     parser.add_argument("--space_of_laws", type=str,
                         choices=["bacon.1", "bacon.6", "pysr"],
@@ -40,6 +40,9 @@ def main():
     data_func = data.allowed_data()[args.dataset]
     init_data, init_symb = data_func(args.noise)
     initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
+
+    if len(init_symb) > 2 and not args.space_of_data:
+        raise Exception("Can only run without data space method if 2 columns in dataframe")
 
     if args.additional_args:
         with open(args.additional_args, "r") as j:

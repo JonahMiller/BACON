@@ -39,7 +39,7 @@ class popular_layer:
         best_expr = max(exprs_found, key=exprs_found.get)
 
         if self.verbose:
-            print(f"Popularity layer: Expressions found are {self.exprs_found}")
+            print(f"Popularity layer: Expressions found are {exprs_found}")
             print(f"                  proceeding with {best_expr}")
 
         if best_expr in lin_relns:

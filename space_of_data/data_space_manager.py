@@ -1,5 +1,6 @@
 from statistics import fmean
 from sympy import Eq
+import sys
 
 from utils import df_helper as df_helper
 
@@ -58,6 +59,13 @@ class data_space:
 
             ave_df = df_helper.average_df(df)
             results = self.laws_method(ave_df, ave_df.columns[1], ave_df.columns[0], self.symbols)
+
+            if results[2] == "print":
+                print(f"Data space: {results[1][0]} = {results[1][1]}")
+                sys.exit()
+
+            if not results[1]:
+                raise Exception("Data space: No satisfactory result found at last level")
 
             if self.verbose:
                 print(f"Data space: {results[1]} is constant at {fmean(results[0])}")
