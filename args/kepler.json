@@ -1,0 +1,12 @@
+{
+    "layer_args": {},
+
+    "laws_args": {"expression": "j*nu**(2/3)",
+                "unknowns": ["j"],
+                "step": 1,
+                "N_threshold": 2,
+                "verbose": true},
+
+    "data_space_args": {"delta": 0.1,
+                        "verbose": false}
+}
