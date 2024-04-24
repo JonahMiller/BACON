@@ -122,7 +122,7 @@ class BACON_6:
         eqn_rhs = self.output_variables()
 
         if self.return_print:
-            return None, [self.symbols[0], eqn_rhs], "print"
+            return None, [self.symbols[0], eqn_rhs.subs(eta, self.symbols[0]).subs(nu, self.symbols[1])], "print"
 
         correct_equation_form = laws_helper.return_equation(eqn_rhs, self.symbols,
                                                             self.all_found_symbols,
