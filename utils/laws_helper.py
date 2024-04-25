@@ -11,7 +11,7 @@ def new_symbol(all_found_symbols):
     Draws new variables to use in the case of linear relationships. Starts with
     "a" and draws onwards in the alphabet.
     '''
-    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']
     for sym in all_found_symbols:
         try:
             idx = letters.index(str(sym))

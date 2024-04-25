@@ -4,9 +4,9 @@ import time
 
 import sys
 sys.path.append("..")
-import data.datasets as data
+import data.datasets as data  # noqa
 
-from pysr import PySRRegressor
+from pysr import PySRRegressor  # noqa
 
 
 def run_pysr(data, variables):
@@ -27,7 +27,7 @@ def run_pysr(data, variables):
     X = pd.DataFrame({str(v): d for v, d in zip(variables[:-1], data[:-1])})
 
     model.fit(X, y)
-    print(model.sympy())
+    print(f"{variables[-1]} = {model.sympy()}")
 
 
 def ParseArgs():

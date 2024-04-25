@@ -78,18 +78,23 @@ class ranking_layer:
         len_best_expr = 1
         if self.verbose:
             print("Ranking layer: Iteratively ranking the found expressions:")
-        for expr, dfs in self.exprs_dict.items():
-            if len(dfs) == 2:
-                s_n_ratio = min(ranking(dfs[0]).signal_noise_ratio(),
-                                ranking(dfs[1]).signal_noise_ratio())
-            else:
-                s_n_ratio = ranking(dfs[0]).signal_noise_ratio()
-            if s_n_ratio > best_ratio:
-                best_ratio = s_n_ratio
-                best_expr = expr
-                len_best_expr = len(dfs)
-            if self.verbose:
-                print(f"               {expr} has score {s_n_ratio}")
+
+        if len(self.exprs_dict) > 1:
+            for expr, dfs in self.exprs_dict.items():
+                if len(dfs) == 2:
+                    s_n_ratio = min(ranking(dfs[0]).signal_noise_ratio(),
+                                    ranking(dfs[1]).signal_noise_ratio())
+                else:
+                    s_n_ratio = ranking(dfs[0]).signal_noise_ratio()
+                if s_n_ratio > best_ratio:
+                    best_ratio = s_n_ratio
+                    best_expr = expr
+                    len_best_expr = len(dfs)
+                if self.verbose:
+                    print(f"               {expr} has score {s_n_ratio}")
+        else:
+            best_expr = list(self.exprs_dict.keys())[0]
+
         if len_best_expr == 2:
             self.symbols.append(self.lin_relns[best_expr][0])
         return best_expr

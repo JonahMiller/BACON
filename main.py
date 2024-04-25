@@ -8,8 +8,9 @@ import data.datasets as data
 from space_of_laws.laws_manager import laws_main
 from space_of_data.layer_manager import layer_main
 
-from space_of_data.data_space_manager import data_space
-from space_of_data.layer_methods.bacon5 import BACON_5
+from space_of_data.space_methods.data_space_manager import data_space
+from space_of_data.space_methods.mixture import mixture
+from space_of_data.space_methods.bacon5 import BACON_5
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -22,7 +23,7 @@ def ParseArgs():
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to the dataset")
     parser.add_argument("--space_of_data", type=str,
-                        choices=["bacon.3", "bacon.5", "gp_ranking", "popularity"],
+                        choices=["bacon.3", "bacon.5", "gp_ranking", "popularity", "mixture"],
                         default=None, metavar="SD",
                         help="how to traverse the space of data")
     parser.add_argument("--space_of_laws", type=str,
@@ -56,16 +57,21 @@ def main():
         laws_args = {}
         data_space_args = {}
 
-    if args.space_of_data != "bacon.5":
+    if args.space_of_data == "bacon.5":
+        ds = BACON_5(initial_df,
+                     laws_main(args.space_of_laws, laws_args),
+                     **layer_args)
+        ds.run_iterations()
+    elif args.space_of_data == "mixture":
+        ds = mixture(initial_df,
+                     laws_main(args.space_of_laws, laws_args),
+                     **data_space_args)
+        ds.run_iterations()
+    else:
         ds = data_space(initial_df,
                         layer_main(args.space_of_data, layer_args),
                         laws_main(args.space_of_laws, laws_args),
                         **data_space_args)
-        ds.run_iterations()
-    else:
-        ds = BACON_5(initial_df,
-                     laws_main(args.space_of_laws, laws_args),
-                     **layer_args)
         ds.run_iterations()
 
 

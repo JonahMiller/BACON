@@ -44,6 +44,19 @@ def black(noise=0):
            [Symbol("M_1"), Symbol("M_2"), Symbol("T_1"), Symbol("T_2"), Symbol("T_f")]
 
 
+def large(noise=0):
+    A = np.array(243*[1] + 243*[2] + 243*[3])
+    B = np.array(3*(81*[4] + 81*[7] + 81*[11]))
+    C = np.array(9*(27*[0.4] + 27*[0.5] + 27*[0.6]))
+    D = np.array(27*(9*[10] + 9*[11] + 9*[12]))
+    E_2 = np.array(81*(3*[1] + 3*[3] + 3*[4]))
+    F = np.array(243*([11, 19, 27]))
+    G = 50*A**2*B*(1 + 30*C)/(D*E_2*(F + 2)) + noise*np.random.normal(0, 1, 729)
+    return [A, B, C, D, E_2, F, G], \
+           [Symbol("A"), Symbol("B"), Symbol("C"), Symbol("D"),
+            Symbol("E_2"), Symbol("F"), Symbol("G")]
+
+
 def kepler(noise=0):
     n = np.arange(1, 11)
     P = np.power(n, 3)
@@ -101,6 +114,7 @@ def allowed_data():
             "kepler": kepler,
             "boyle": boyle,
             "birthday": birthday,
-            "lv": lotka_volterra
+            "lv": lotka_volterra,
+            "large": large
            }
     return data

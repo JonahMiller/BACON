@@ -3,6 +3,8 @@ from statistics import fmean
 from sympy import Symbol, simplify
 from scipy.stats import linregress as lr
 
+from utils import laws_helper as laws_helper
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -52,8 +54,8 @@ class BACON_1:
         '''
         Checks if any variables are initialised as constant.
         '''
-        M_1 = fmean(self.data[0])
-        if all(abs(M_1)*(1 - self.delta) < abs(v) < abs(M_1)*(1 + self.delta) for v in self.data[0]):
+        M = fmean(self.data[0])
+        if all(abs(M)*(1 - self.delta) < abs(v) < abs(M)*(1 + self.delta) for v in self.data[0]):
             return self.data[0], self.symbols[0], "constant"
         else:
             return self.data, self.symbols, ""
@@ -111,7 +113,7 @@ class BACON_1:
         self.symbols.append(simplify(symbol_2 - m*symbol_1))
         self.data.append(data_2 - m*data_1)
         self.update = "linear"
-        k = self.new_symbol()
+        k = laws_helper.new_symbol(self.all_found_symbols)
         self.lin_data = ["linear", k, self.subs_expr(symbol_2 - k*symbol_1),
                          m, self.subs_expr(symbol_2), self.subs_expr(symbol_1)]
         if self.verbose:
@@ -144,18 +146,3 @@ class BACON_1:
         e1 = expr.subs(eta, self.init_symbols[0])
         e2 = e1.subs(nu, self.init_symbols[1])
         return e2
-
-    def new_symbol(self):
-        '''
-        Draws new variables to use in the case of linear relationships. Starts with
-        "a" and draws onwards in the alphabet.
-        '''
-        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        for sym in self.all_found_symbols:
-            try:
-                idx = letters.index(str(sym))
-                letters = letters[idx + 1:]
-            except ValueError:
-                continue
-        letter = Symbol(letters[0])
-        return letter

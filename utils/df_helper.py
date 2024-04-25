@@ -39,18 +39,22 @@ def update_df_with_multiple_expr(expression1, expression2, df):
     Removes last 2 columns of df and replace with expressions replacing
     these 2 columns.
     """
-    print(expression1, expression2)
-    print(df)
-    try:
-        new_col_1 = new_df_col(expression1, df)
-        new_col_2 = df.loc[:, [expression2]]
-    except KeyError:
-        new_col_2 = new_df_col(expression2, df)
-        new_col_1 = df.loc[:, [expression1]]
+    col_names = df.columns.tolist()
 
-    new_cols = new_col_1.join(new_col_2)
+    if expression1 not in col_names:
+        new_col1 = new_df_col(expression1, df)
+    else:
+        expr_idx1 = col_names.index(expression1)
+        new_col1 = df.iloc[:, [expr_idx1]]
+
+    if expression2 not in col_names:
+        new_col2 = new_df_col(expression2, df)
+    else:
+        expr_idx2 = col_names.index(expression2)
+        new_col2 = df.iloc[:, [expr_idx2]]
+
+    new_cols = new_col1.join(new_col2)
     df = df.iloc[:, :-2].join(new_cols)
-    print(df)
     return df
 
 
@@ -106,7 +110,7 @@ def average_df(df):
         return_df = pd.DataFrame()
         for val in unique_vals:
             mini_df = df.loc[df[col_0] == val]
-            n_df = mini_df.iloc[:, :-1]
+            n_df = mini_df.iloc[[0], :-1]
             n_df[col_1] = np.mean(mini_df[mini_df.columns[-1]])
             return_df = pd.concat((return_df, n_df))
         return return_df
@@ -119,19 +123,11 @@ def linear_relns(df, dummy_sym, expr_sym):
     data2 = df.iloc[:, -2].values.tolist()
 
     expr_data, dummy_data = [], []
+    m, c = np.polyfit(data1, data2, 1)
 
-    # Is the method below best?
-    for idx in range(len(data1)):
-        d1_1 = data1[:idx + 1] + data1[idx + 2:]
-        d2_1 = data2[:idx + 1] + data2[idx + 2:]
-
-        d1_2 = data1[:idx - 1] + data1[idx:]
-        d2_2 = data2[:idx - 1] + data2[idx:]
-
-        m1, c1 = np.polyfit(d1_1, d2_1, 1)
-        m2, c2 = np.polyfit(d1_2, d2_2, 1)
-        dummy_data.append((m1 + m2)/2)
-        expr_data.append((c1 + c2)/2)
+    for d1, d2 in zip(data1, data2):
+        dummy_data.append((d2 - c)/d1)
+        expr_data.append(d2 - m*d1)
 
     return pd.DataFrame({dummy_sym: dummy_data}, index=indecies), \
         pd.DataFrame({expr_sym: expr_data}, index=indecies)
