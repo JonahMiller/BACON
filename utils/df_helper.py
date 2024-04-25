@@ -120,7 +120,7 @@ def linear_relns(df, dummy_sym, expr_sym):
 
     expr_data, dummy_data = [], []
 
-    # Is the below correct?
+    # Is the method below best?
     for idx in range(len(data1)):
         d1_1 = data1[:idx + 1] + data1[idx + 2:]
         d2_1 = data2[:idx + 1] + data2[idx + 2:]
