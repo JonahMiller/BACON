@@ -39,6 +39,8 @@ def update_df_with_multiple_expr(expression1, expression2, df):
     Removes last 2 columns of df and replace with expressions replacing
     these 2 columns.
     """
+    print(expression1, expression2)
+    print(df)
     try:
         new_col_1 = new_df_col(expression1, df)
         new_col_2 = df.loc[:, [expression2]]
@@ -48,6 +50,7 @@ def update_df_with_multiple_expr(expression1, expression2, df):
 
     new_cols = new_col_1.join(new_col_2)
     df = df.iloc[:, :-2].join(new_cols)
+    print(df)
     return df
 
 
@@ -152,6 +155,18 @@ def lin_reln_2_df(df, backup_df, dummy_sym, expr_sym):
         expr_data.append(c)
     return pd.DataFrame({dummy_sym: dummy_data}, index=indecies), \
         pd.DataFrame({expr_sym: expr_data}, index=indecies)
+
+
+def not_last_iteration(dfs):
+    for df in dfs:
+        if len(df.columns) > 2:
+            return True
+    return False
+
+
+def print_dfs(dfs):
+    for df in dfs:
+        print(df)
 
 
 def score(init_df, eqns):

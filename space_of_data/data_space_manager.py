@@ -25,7 +25,7 @@ class data_space:
         Manages the iterations over all the layers in a for loop until each dataframe
         only has two columns left.
         """
-        while self.not_last_iteration():
+        while df_helper.not_last_iteration(self.dfs):
             new_dfs = []
 
             self.dfs, self.eqns = df_helper.check_const_col(self.dfs, self.eqns,
@@ -46,8 +46,6 @@ class data_space:
                     print(f"            displayed fix variables {[df.columns[-1] for df in new_df]}.")
 
             self.dfs = new_dfs
-
-        # self.print_dfs()
 
         constants = []
         for df in self.dfs:
@@ -73,13 +71,3 @@ class data_space:
             self.eqns.append(Eq(results[1], fmean(results[0])))
 
         df_helper.score(self.initial_df, self.eqns)
-
-    def not_last_iteration(self):
-        for df in self.dfs:
-            if len(df.columns) > 2:
-                return True
-        return False
-
-    def print_dfs(self):
-        for df in self.dfs:
-            print(df)

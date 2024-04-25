@@ -9,7 +9,7 @@ from space_of_laws.laws_manager import laws_main
 from space_of_data.layer_manager import layer_main
 
 from space_of_data.data_space_manager import data_space
-from space_of_data.layer_methods.mc_tree import BACON_5
+from space_of_data.layer_methods.bacon5 import BACON_5
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -52,8 +52,8 @@ def main():
             laws_args = all_args["laws_args"]
             data_space_args = all_args["data_space_args"]
     else:
-        layer_args = None
-        laws_args = None
+        layer_args = {}
+        laws_args = {}
         data_space_args = {}
 
     if args.space_of_data != "bacon.5":
@@ -63,8 +63,10 @@ def main():
                         **data_space_args)
         ds.run_iterations()
     else:
-        ds = BACON_5(initial_df)
-        ds.bacon_iterations()
+        ds = BACON_5(initial_df,
+                     laws_main(args.space_of_laws, laws_args),
+                     **layer_args)
+        ds.run_iterations()
 
 
 if __name__ == "__main__":

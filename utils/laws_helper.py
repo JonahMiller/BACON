@@ -86,7 +86,6 @@ class return_equation:
         coeff, var1, var2 = self.linear_term_coeff(expr)
         k = new_symbol(self.all_found_symbols)
         lin_data = ["linear", k, var1 - nsimplify(k*var2), -coeff, var1, var2]
-        print([coeff], self.subs_expr(expr), lin_data)
         return [coeff], self.subs_expr(expr), lin_data
 
     def complex_linear_1_term(self, eqn):

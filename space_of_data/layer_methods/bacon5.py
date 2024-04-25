@@ -3,32 +3,10 @@ import numpy as np
 from statistics import fmean
 from sympy import Eq
 
-from space_of_laws.laws_methods.bacon1 import BACON_1
 from utils import df_helper as df_helper
 
 
-np.random.seed(8)
-
-
-def run_bacon_1(df, col_1, col_2, all_found_symbols,
-                verbose=False, delta=0.1, epsilon=0.001):
-    """
-    Runs an instance of BACON.1 on the specified columns
-    col_1 and col_2 in the specified dataframe df.
-    """
-    if verbose:
-        unused_df = df.iloc[:, :-2]
-        col_names = unused_df.columns.tolist()
-        col_ave = [unused_df.loc[:, name].mean() for name in col_names]
-        if len(col_names) != 0:
-            print(f"Laws manager: Running BACON 1 on variables [{col_1}, {col_2}] and")
-            print(f"              unused variables {col_names} set as {col_ave}.")
-        else:
-            print(f"Laws manager: Running BACON 1 on variables [{col_1}, {col_2}]")
-    bacon_1_instance = BACON_1(df[[col_1, col_2]], all_found_symbols,
-                               epsilon, delta,
-                               verbose=verbose)
-    return bacon_1_instance.bacon_iterations()
+np.random.seed(26)
 
 
 class BACON_5:
@@ -37,13 +15,10 @@ class BACON_5:
     It allows additional benefits such as noise resistance and machine learning based
     pruning.
     """
-    def __init__(self, initial_df,
-                 epsilon=0.001, delta=0.01,
-                 bacon_1_info=False, verbose=False):
+    def __init__(self, initial_df, laws_method, delta=0.1, verbose=False):
         self.initial_df = initial_df
-        self.epsilon = epsilon
         self.delta = delta
-        self.bacon_1_info = bacon_1_info
+        self.laws_method = laws_method
         self.verbose = verbose
         self.eqns = []
         self.found_exprs = []
@@ -111,7 +86,7 @@ class BACON_5:
                     backup_backup_df = df_helper.update_df_with_multiple_expr(expr[2], expr[3], backup_backup_df)
                     backup_df = df_helper.update_df_with_multiple_expr(expr[2], expr[3], backup_df)
                     dummy_col, expr_col = df_helper.lin_reln_2_df(backup_df, backup_backup_df,
-                                                                      expr[0], expr[1])
+                                                                  expr[0], expr[1])
 
                     b_df1 = backup_df.iloc[:, :-2].join(dummy_col)
                     b_df2 = backup_df.iloc[:, :-2].join(expr_col)
@@ -125,13 +100,13 @@ class BACON_5:
 
         return backup_df
 
-    def bacon_iterations(self):
+    def run_iterations(self):
         """
         Manages the iterations over all the layers in a for loop until each dataframe
         only has two columns left.
         """
         self.dataframe_manager()
-        while self.not_last_iteration():
+        while df_helper.not_last_iteration(self.dfs):
             new_dfs = []
             df_helper.check_const_col(self.dfs, self.eqns, self.delta, self.verbose)
 
@@ -142,8 +117,7 @@ class BACON_5:
                 small_df = df.iloc[:3, :]
                 indecies = small_df.index.values
 
-                results = run_bacon_1(small_df, small_df.columns[-1], small_df.columns[-2], self.symbols,
-                                      epsilon=self.epsilon, delta=self.delta, verbose=self.bacon_1_info)
+                results = self.laws_method(small_df, small_df.columns[-1], small_df.columns[-2], self.symbols)
 
                 # Special check for linear relationship added to dataframe
                 if isinstance(results[2], list):
@@ -191,13 +165,10 @@ class BACON_5:
 
         constants = []
         for df in self.dfs:
-            # When only 2 columns left do simple Bacon 1
-
             if self.verbose:
-                print(f"BACON 5: Running BACON 1 on final variables [{df.columns[0]}, {df.columns[1]}]")
+                print(f"BACON 5: Running laws method on final variables [{df.columns[0]}, {df.columns[1]}]")
 
-            results = run_bacon_1(df, df.columns[0], df.columns[1], self.symbols,
-                                  epsilon=self.epsilon, delta=self.delta, verbose=self.bacon_1_info)
+            results = self.laws_method(df, df.columns[0], df.columns[1], self.symbols)
 
             if self.verbose:
                 print(f"BACON 5: {results[1]} is constant at {fmean(results[0])}")
@@ -205,13 +176,3 @@ class BACON_5:
             self.eqns.append(Eq(results[1], fmean(results[0])))
 
         df_helper.score(self.initial_df, self.eqns)
-
-    def not_last_iteration(self):
-        for df in self.dfs:
-            if len(df.columns) > 2:
-                return True
-        return False
-
-    def print_dfs(self):
-        for df in self.dfs:
-            print(df)

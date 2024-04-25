@@ -27,8 +27,8 @@ class BACON_6:
         self.verbose = verbose
         self.return_print = return_print
 
-        self.eta = self.data[0]
-        self.nu = self.data[1]
+        self.eta = self.data[0].astype("float64")
+        self.nu = self.data[1].astype("float64")
         self.parse_expression(expression, unknowns)
 
     def parse_expression(self, expression, unknowns):
