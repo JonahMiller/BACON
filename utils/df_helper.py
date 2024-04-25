@@ -57,9 +57,7 @@ def check_const_col(dfs, eqns, delta, logging):
     """
     idx_delete = []
     for i, df in enumerate(list(dfs)):
-
         col = df.iloc[:, -1].values
-        col = col.reshape(-1, 3).mean(axis=1)
         mean = fmean(col)
         M = abs(mean)
 
@@ -119,6 +117,7 @@ def linear_relns(df, dummy_sym, expr_sym):
 
     expr_data, dummy_data = [], []
 
+    # Is the below correct?
     for idx in range(len(data1)):
         d1_1 = data1[:idx + 1] + data1[idx + 2:]
         d2_1 = data2[:idx + 1] + data2[idx + 2:]
@@ -131,6 +130,26 @@ def linear_relns(df, dummy_sym, expr_sym):
         dummy_data.append((m1 + m2)/2)
         expr_data.append((c1 + c2)/2)
 
+    return pd.DataFrame({dummy_sym: dummy_data}, index=indecies), \
+        pd.DataFrame({expr_sym: expr_data}, index=indecies)
+
+
+def lin_reln_2_df(df, backup_df, dummy_sym, expr_sym):
+    """
+    Uses a backup dataframe to find values for linear relationships.
+    """
+    indecies = df.index.values
+
+    data1 = [[v1, v2] for v1, v2 in zip(df.iloc[:, -1].values.tolist(),
+                                        backup_df.iloc[:, -1].values.tolist())]
+    data2 = [[v1, v2] for v1, v2 in zip(df.iloc[:, -2].values.tolist(),
+                                        backup_df.iloc[:, -2].values.tolist())]
+
+    expr_data, dummy_data = [], []
+    for x, y in zip(data1, data2):
+        m, c = np.polyfit(x, y, 1)
+        dummy_data.append(m)
+        expr_data.append(c)
     return pd.DataFrame({dummy_sym: dummy_data}, index=indecies), \
         pd.DataFrame({expr_sym: expr_data}, index=indecies)
 

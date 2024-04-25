@@ -17,7 +17,6 @@ class data_space:
         self.laws_method = laws_method
         self.verbose = verbose
         self.symbols = list(sum(sym for sym in list(initial_df)).free_symbols)
-
         self.delta = delta
         self.eqns = []
 
