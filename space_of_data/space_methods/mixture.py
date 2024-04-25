@@ -80,8 +80,7 @@ class mixture:
                 print(f"Data space: Calculating laws on final variables [{df.columns[0]}, {df.columns[1]}]")
 
             ave_df = df_helper.average_df(df)
-            print(ave_df)
-            results = self.laws_method(ave_df, ave_df.columns[1], ave_df.columns[0], self.symbols)
+            results = self.laws_method(ave_df, ave_df.columns[0], ave_df.columns[1], self.symbols)
 
             if results[2] == "print":
                 print(f"Data space: {results[1][0]} = {results[1][1]}")
@@ -89,8 +88,6 @@ class mixture:
 
             if not results[1]:
                 raise Exception("Data space: No satisfactory result found at last level")
-            for r in results:
-                print(r)
             if self.verbose:
                 print(f"Data space: {results[1]} is constant at {fmean(results[0])}")
             constants.append(results[1])
