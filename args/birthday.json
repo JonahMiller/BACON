@@ -1,0 +1,12 @@
+{
+    "layer_args": {},
+
+    "laws_args": {"expression": "j*nu**(3/2) + k*nu + l*nu**(1/2)",
+                  "unknowns": ["j", "k", "l"],
+                  "step": 4,
+                  "N_threshold": 3,
+                  "return_print": true},
+
+    "data_space_args": {"delta": 0.1,
+                        "verbose": false}
+}
