@@ -4,14 +4,12 @@ import json
 import pandas as pd
 
 import data.datasets as data
-
 from space_of_laws.laws_manager import laws_main
 from space_of_data.layer_manager import layer_main
-
 from space_of_data.space_methods.data_space_manager import data_space
 from space_of_data.space_methods.mixture import mixture
 from space_of_data.space_methods.bacon5 import BACON_5
-from space_of_data.space_methods.mcts import MonteCarloTreeSearchNode
+from space_of_data.space_methods.mcts import MonteCarloTreeSearchNode, space_node
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -70,9 +68,11 @@ def main():
                      **data_space_args)
         ds.run_iterations()
     elif args.space_of_data == "mcts":
-        root = MonteCarloTreeSearchNode(state=0,
-                                        initial_df=initial_df)
+        init_state = space_node(initial_df, dfs=[initial_df], eqns=[],
+                                epsilon=0.001, delta=0.1)
+        root = MonteCarloTreeSearchNode(state=init_state)
         selected_node = root.best_action()
+        print(selected_node.state.eqns)
     else:
         ds = data_space(initial_df,
                         layer_main(args.space_of_data, layer_args),
