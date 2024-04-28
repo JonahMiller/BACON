@@ -71,7 +71,7 @@ def main():
         init_state = [init_symb[-1]]
         root = MonteCarloTreeSearchNode(initial_df, state=init_state)
         selected_node = root.best_action()
-        print(selected_node.state)
+        print(selected_node)
     else:
         ds = data_space(initial_df,
                         layer_main(args.space_of_data, layer_args),

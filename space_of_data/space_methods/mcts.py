@@ -43,9 +43,8 @@ def bacon_1(df, col_1, col_2, all_found_symbols,
 class MonteCarloTreeSearchNode():
     def __init__(self, initial_df, state, parent=None, parent_action=None):
         self.initial_df = initial_df
-        update_df_dict(key=f'{state}', value={"dfs": [self.initial_df], "eqns": []})
-        print(state)
         self.state = state
+        self.state_class = node(self.initial_df, self.state)
         self.parent = parent
         self.parent_action = parent_action
         self.children = []
@@ -58,7 +57,7 @@ class MonteCarloTreeSearchNode():
         return
 
     def untried_actions(self):
-        self._untried_actions = node(self.initial_df, self.state).get_legal_actions()
+        self._untried_actions = self.state_class.get_legal_actions()
         return self._untried_actions
 
     def q(self):
@@ -71,16 +70,16 @@ class MonteCarloTreeSearchNode():
 
     def expand(self):
         action = self._untried_actions.pop()
-        next_state = node(self.initial_df, self.state).move(action)
+        next_state = self.state_class.move(action)
         child_node = MonteCarloTreeSearchNode(self.initial_df, next_state, parent=self, parent_action=action)
         self.children.append(child_node)
         return child_node
 
     def is_terminal_node(self):
-        return node(self.initial_df, self.state).is_game_over()
+        return self.state_class.is_game_over()
 
     def rollout(self):
-        current_rollout_state = node(self.initial_df, self.state)
+        current_rollout_state = self.state_class
         while not current_rollout_state.is_game_over():
             possible_moves = current_rollout_state.get_legal_actions()
             action = self.rollout_policy(possible_moves)
@@ -114,34 +113,42 @@ class MonteCarloTreeSearchNode():
         return current_node
 
     def best_action(self):
-        simulation_no = 100
+        simulation_no = 2
         for i in range(simulation_no):
             v = self._tree_policy()
             reward = v.rollout()
+            print("@@@@@@@@@@@@@@@@")
             v.backpropagate(reward)
-        return self.best_child(c_param=0.)
+        # print(self.best_child().state)
+        # print(df_dict[str(self.best_child().state)])
+        # print(df_dict)
+        # return self.best_child().state, df_dict[self.best_child().state]
+        # return self.best_child(c_param=0.)
 
 
 class node:
     def __init__(self, initial_df, var_list):
         self.initial_df = initial_df
         self.var_list = var_list
+        if str(var_list) not in df_dict:
+            update_df_dict(key=f'{var_list}', value={"dfs": [self.initial_df], "eqns": []})
+        print(df_dict[str(var_list)], str(var_list))
         self.dfs = df_dict[str(var_list)]["dfs"]
         self.eqns = df_dict[str(var_list)]["eqns"]
-        self.symbols = list(sum(sym for sym in list(initial_df)).free_symbols)
+        if not self.dfs:
+            self.game_over = True
+        else:
+            self.game_over = False
+            self.symbols = list(sum(sym for sym in list(var_list)).free_symbols)
 
     def get_legal_actions(self):
-        epsilon = [0.000001, 0.00001, 0.0001, 0.001, 0.01]
+        epsilon = [0.00001, 0.0001, 0.001, 0.01]
         delta = [0.01, 0.05, 0.1]
-        # epsilon = [epsilon for epsilon in epsilon_poss if epsilon <= self.epsilon]
-        # delta = [delta for delta in delta_poss if delta <= self.delta]
         actions = list(product(epsilon, delta))
         return actions
 
     def is_game_over(self):
-        if len(self.dfs) == 0:
-            return True
-        return False
+        return self.game_over
 
     def move(self, action):
         new_dfs = []
@@ -153,33 +160,38 @@ class node:
                                                  self.symbols)
                 new_df, self.symbols = layer_in_context.run_single_iteration()
                 new_dfs.extend(new_df)
-            else:
+            elif len(df.columns) == 2:
                 ave_df = df_helper.average_df(df)
                 results = bacon_1(ave_df, ave_df.columns[1], ave_df.columns[0], self.symbols,
                                   epsilon=action[0], delta=action[1])
                 self.eqns.append(Eq(results[1], fmean(results[0])))
-        self.dfs, self.eqns = df_helper.check_const_col(new_dfs, self.eqns, 0.1, logging=False)
-        var_list = [df.columns.tolist()[-1] for df in self.dfs]
-        update_df_dict(key=str(var_list), value={"dfs": self.dfs, "eqns": self.eqns})
-        return var_list
+                var_list = [eqn.lhs for eqn in self.eqns]
+                self.game_over = True
+
+        if not self.game_over:
+            self.dfs, self.eqns = df_helper.check_const_col(new_dfs, self.eqns, 0.1, logging=False)
+            var_list = [df.columns.tolist()[-1] for df in self.dfs]
+            update_df_dict(key=str(var_list), value={"dfs": self.dfs, "eqns": self.eqns})
+            return var_list
+        else:
+            update_df_dict(key=str(var_list), value={"dfs": [], "eqns": self.eqns})
+            return var_list
 
     def game_result(self):
         key_var = self.initial_df.columns[-1]
         try:
             eqn = loss_helper.simplify_eqns(self.initial_df, self.eqns, key_var).iterate_through_dummys()
-            loss = timeout(loss_helper.loss_calc(self.initial_df, eqn).loss(), timeout_duration=1, default="fail")
-            print(f"loss: {loss}")
-            if loss == "fail":
+            score = timeout(loss_helper.loss_calc(self.initial_df, eqn).loss, timeout_duration=10, default="fail")
+            if score == "fail":
                 return -0.5
-            if abs(loss) < 0.1:
+            if abs(score) < 0.1:
                 return 1
-            if abs(loss) < 1:
+            if abs(score) < 1:
                 return 0.75
-            if abs(loss) < 10:
+            if abs(score) < 10:
                 return 0.5
             return 0
         except Exception:
-            print(f"fail: {self.eqns}")
             return -1
 
 
