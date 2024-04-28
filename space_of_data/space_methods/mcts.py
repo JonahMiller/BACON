@@ -11,6 +11,14 @@ from space_of_laws.laws_methods.bacon1 import BACON_1
 from space_of_data.layer_methods.popularity import popular_layer
 
 
+df_dict = {}
+
+
+def update_df_dict(key, value):
+    if key not in df_dict:
+        df_dict[key] = value
+
+
 def bacon_1(df, col_1, col_2, all_found_symbols,
             epsilon, delta, verbose=False):
     """
@@ -33,7 +41,10 @@ def bacon_1(df, col_1, col_2, all_found_symbols,
 
 
 class MonteCarloTreeSearchNode():
-    def __init__(self, state, parent=None, parent_action=None):
+    def __init__(self, initial_df, state, parent=None, parent_action=None):
+        self.initial_df = initial_df
+        update_df_dict(key=f'{state}', value={"dfs": [self.initial_df], "eqns": []})
+        print(state)
         self.state = state
         self.parent = parent
         self.parent_action = parent_action
@@ -47,7 +58,7 @@ class MonteCarloTreeSearchNode():
         return
 
     def untried_actions(self):
-        self._untried_actions = self.state.get_legal_actions()
+        self._untried_actions = node(self.initial_df, self.state).get_legal_actions()
         return self._untried_actions
 
     def q(self):
@@ -60,21 +71,21 @@ class MonteCarloTreeSearchNode():
 
     def expand(self):
         action = self._untried_actions.pop()
-        next_state = self.state.move(action)
-        child_node = MonteCarloTreeSearchNode(
-            next_state, parent=self, parent_action=action)
+        next_state = node(self.initial_df, self.state).move(action)
+        child_node = MonteCarloTreeSearchNode(self.initial_df, next_state, parent=self, parent_action=action)
         self.children.append(child_node)
         return child_node
 
     def is_terminal_node(self):
-        return self.state.is_game_over()
+        return node(self.initial_df, self.state).is_game_over()
 
     def rollout(self):
-        current_rollout_state = self.state
+        current_rollout_state = node(self.initial_df, self.state)
         while not current_rollout_state.is_game_over():
             possible_moves = current_rollout_state.get_legal_actions()
             action = self.rollout_policy(possible_moves)
-            current_rollout_state = current_rollout_state.move(action)
+            new_state = current_rollout_state.move(action)
+            current_rollout_state = node(self.initial_df, new_state)
         return current_rollout_state.game_result()
 
     def backpropagate(self, result):
@@ -111,20 +122,19 @@ class MonteCarloTreeSearchNode():
         return self.best_child(c_param=0.)
 
 
-class space_node:
-    def __init__(self, initial_df, dfs, eqns, epsilon, delta):
+class node:
+    def __init__(self, initial_df, var_list):
         self.initial_df = initial_df
-        self.dfs = dfs
-        self.eqns = eqns
-        self.epsilon = epsilon
-        self.delta = delta
+        self.var_list = var_list
+        self.dfs = df_dict[str(var_list)]["dfs"]
+        self.eqns = df_dict[str(var_list)]["eqns"]
         self.symbols = list(sum(sym for sym in list(initial_df)).free_symbols)
 
     def get_legal_actions(self):
-        epsilon_poss = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1]
-        delta_poss = [0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2]
-        epsilon = [epsilon for epsilon in epsilon_poss if epsilon <= self.epsilon]
-        delta = [delta for delta in delta_poss if delta <= self.delta]
+        epsilon = [0.000001, 0.00001, 0.0001, 0.001, 0.01]
+        delta = [0.01, 0.05, 0.1]
+        # epsilon = [epsilon for epsilon in epsilon_poss if epsilon <= self.epsilon]
+        # delta = [delta for delta in delta_poss if delta <= self.delta]
         actions = list(product(epsilon, delta))
         return actions
 
@@ -132,23 +142,6 @@ class space_node:
         if len(self.dfs) == 0:
             return True
         return False
-
-    def game_result(self):
-        key_var = self.initial_df.columns[-1]
-        try:
-            eqn = loss_helper.simplify_eqns(self.initial_df, self.eqns, key_var).iterate_through_dummys()
-            loss = timeout(loss_helper.loss_calc(self.initial_df, eqn).loss(), timeout_duration=0.2, default="fail")
-            if loss == "fail":
-                return -0.5
-            if abs(loss) < 0.1:
-                return 1
-            if abs(loss) < 1:
-                return 0.75
-            if abs(loss) < 10:
-                return 0.5
-            return 0
-        except Exception:
-            return -1
 
     def move(self, action):
         new_dfs = []
@@ -166,7 +159,28 @@ class space_node:
                                   epsilon=action[0], delta=action[1])
                 self.eqns.append(Eq(results[1], fmean(results[0])))
         self.dfs, self.eqns = df_helper.check_const_col(new_dfs, self.eqns, 0.1, logging=False)
-        return space_node(self.initial_df, new_dfs, self.eqns, action[0], action[1])
+        var_list = [df.columns.tolist()[-1] for df in self.dfs]
+        update_df_dict(key=str(var_list), value={"dfs": self.dfs, "eqns": self.eqns})
+        return var_list
+
+    def game_result(self):
+        key_var = self.initial_df.columns[-1]
+        try:
+            eqn = loss_helper.simplify_eqns(self.initial_df, self.eqns, key_var).iterate_through_dummys()
+            loss = timeout(loss_helper.loss_calc(self.initial_df, eqn).loss(), timeout_duration=1, default="fail")
+            print(f"loss: {loss}")
+            if loss == "fail":
+                return -0.5
+            if abs(loss) < 0.1:
+                return 1
+            if abs(loss) < 1:
+                return 0.75
+            if abs(loss) < 10:
+                return 0.5
+            return 0
+        except Exception:
+            print(f"fail: {self.eqns}")
+            return -1
 
 
 # https://stackoverflow.com/a/13821695
