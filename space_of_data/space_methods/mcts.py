@@ -11,10 +11,7 @@ from space_of_laws.laws_methods.bacon1 import BACON_1
 from space_of_data.layer_methods.popularity import popular_layer
 
 
-df_dict = {}
-
-
-def update_df_dict(key, value):
+def update_dict(key, value):
     if key not in df_dict:
         df_dict[key] = value
 
@@ -113,75 +110,71 @@ class MonteCarloTreeSearchNode():
         return current_node
 
     def best_action(self):
-        simulation_no = 2
-        for i in range(simulation_no):
+        simulation_no = 50
+        for _ in range(simulation_no):
             v = self._tree_policy()
             reward = v.rollout()
-            print("@@@@@@@@@@@@@@@@")
+            print(reward)
             v.backpropagate(reward)
-        # print(self.best_child().state)
-        # print(df_dict[str(self.best_child().state)])
-        # print(df_dict)
-        # return self.best_child().state, df_dict[self.best_child().state]
-        # return self.best_child(c_param=0.)
+        return self.best_child(c_param=0.).state, df_dict[str(self.best_child(c_param=0.).state)]
 
 
 class node:
     def __init__(self, initial_df, var_list):
+        print(var_list)
         self.initial_df = initial_df
         self.var_list = var_list
-        if str(var_list) not in df_dict:
-            update_df_dict(key=f'{var_list}', value={"dfs": [self.initial_df], "eqns": []})
-        print(df_dict[str(var_list)], str(var_list))
-        self.dfs = df_dict[str(var_list)]["dfs"]
-        self.eqns = df_dict[str(var_list)]["eqns"]
-        if not self.dfs:
-            self.game_over = True
-        else:
-            self.game_over = False
+        dict_entry = df_dict[str(var_list)]
+        self.dfs = dict_entry["dfs"]
+        self.eqns = dict_entry["eqns"]
+        if dict_entry["dfs"]:
             self.symbols = list(sum(sym for sym in list(var_list)).free_symbols)
 
     def get_legal_actions(self):
-        epsilon = [0.00001, 0.0001, 0.001, 0.01]
-        delta = [0.01, 0.05, 0.1]
+        epsilon = [0.001, 0.01, 0.1]
+        delta = [0.01, 0.04, 0.07]
         actions = list(product(epsilon, delta))
         return actions
 
     def is_game_over(self):
-        return self.game_over
+        if df_dict[str(self.var_list)]["dfs"]:
+            return False
+        return True
 
     def move(self, action):
         new_dfs = []
+        final_eqns = []
+        df_len = len(self.dfs[0].columns)
         for df in self.dfs:
-            if len(df.columns) > 2:
+            if df_len > 2:
                 layer_in_context = popular_layer(df, lambda df, col_1, col_2, afs:
                                                  bacon_1(df, col_1, col_2, afs,
                                                          epsilon=action[0], delta=action[1]),
                                                  self.symbols)
                 new_df, self.symbols = layer_in_context.run_single_iteration()
                 new_dfs.extend(new_df)
-            elif len(df.columns) == 2:
+            elif df_len == 2:
                 ave_df = df_helper.average_df(df)
                 results = bacon_1(ave_df, ave_df.columns[1], ave_df.columns[0], self.symbols,
                                   epsilon=action[0], delta=action[1])
-                self.eqns.append(Eq(results[1], fmean(results[0])))
-                var_list = [eqn.lhs for eqn in self.eqns]
-                self.game_over = True
+                final_eqns.append(Eq(results[1], fmean(results[0])))
 
-        if not self.game_over:
+        if df_len > 2:
             self.dfs, self.eqns = df_helper.check_const_col(new_dfs, self.eqns, 0.1, logging=False)
-            var_list = [df.columns.tolist()[-1] for df in self.dfs]
-            update_df_dict(key=str(var_list), value={"dfs": self.dfs, "eqns": self.eqns})
+            var_list = [eqn.lhs for eqn in self.eqns] + [df.columns.tolist()[-1] for df in self.dfs] + [df_len - 1]
+            update_dict(key=str(var_list), value={"dfs": self.dfs, "eqns": self.eqns})
             return var_list
         else:
-            update_df_dict(key=str(var_list), value={"dfs": [], "eqns": self.eqns})
+            final_eqns = self.eqns + final_eqns
+            var_list = [eqn.lhs for eqn in final_eqns] + [1]
+            update_dict(key=str(var_list), value={"dfs": [], "eqns": final_eqns})
             return var_list
 
     def game_result(self):
         key_var = self.initial_df.columns[-1]
         try:
             eqn = loss_helper.simplify_eqns(self.initial_df, self.eqns, key_var).iterate_through_dummys()
-            score = timeout(loss_helper.loss_calc(self.initial_df, eqn).loss, timeout_duration=10, default="fail")
+            score = timeout(loss_helper.loss_calc(self.initial_df, eqn).loss, timeout_duration=1, default="fail")
             if score == "fail":
                 return -0.5
             if abs(score) < 0.1:
@@ -190,9 +183,25 @@ class node:
                 return 0.75
             if abs(score) < 10:
                 return 0.5
-            return 0
-        except Exception:
+            return -0.5
+        except Exception as e:
+            print(e)
             return -1
+
+
+def main_mcts(initial_df, init_state):
+    global df_dict
+    dict_state = {"dfs": [initial_df], "eqns": []}
+    df_dict = {str(init_state): dict_state}
+    # while dict_state["dfs"]:
+    for _ in range(1):
+        print("@@@@@@@@@@@@@@@@@@@@@@@")
+        root = MonteCarloTreeSearchNode(initial_df, state=init_state)
+        init_state, dict_state = root.best_action()
+        df_dict = {str(init_state): dict_state}
+        # print(df_dict)
+        # print(init_state)
+    print(f"FINAL NODE STATE IS {init_state}")
 
 
 # https://stackoverflow.com/a/13821695

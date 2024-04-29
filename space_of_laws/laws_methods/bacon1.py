@@ -87,9 +87,12 @@ class BACON_1:
 
     def new_term(self, symbol):
         '''
-        Checks if the new term BACON.1 proposed has been tried already.
+        Checks if the new term BACON.1 proposed has been tried already or is invalid.
         '''
-        if symbol not in self.symbols and simplify(1/symbol) not in self.symbols and symbol != 1:
+        if symbol not in self.symbols \
+           and simplify(1/symbol) not in self.symbols \
+           and symbol != 1 \
+           and len(symbol.free_symbols) != 1:
             return True
         else:
             self.update = ""

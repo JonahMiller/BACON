@@ -9,7 +9,7 @@ from space_of_data.layer_manager import layer_main
 from space_of_data.space_methods.data_space_manager import data_space
 from space_of_data.space_methods.mixture import mixture
 from space_of_data.space_methods.bacon5 import BACON_5
-from space_of_data.space_methods.mcts import MonteCarloTreeSearchNode
+from space_of_data.space_methods.mcts import main_mcts
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -68,10 +68,8 @@ def main():
                      **data_space_args)
         ds.run_iterations()
     elif args.space_of_data == "mcts":
-        init_state = [init_symb[-1]]
-        root = MonteCarloTreeSearchNode(initial_df, state=init_state)
-        selected_node = root.best_action()
-        print(selected_node)
+        init_state = [init_symb[-1], len(init_symb)]
+        main_mcts(initial_df, init_state)
     else:
         ds = data_space(initial_df,
                         layer_main(args.space_of_data, layer_args),

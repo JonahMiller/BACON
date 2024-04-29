@@ -2,7 +2,7 @@
     "layer_args": {"verbose": true},
 
     "laws_args": {"epsilon": 0.001,
-                  "delta": 0.07,
+                  "delta": 0.04,
                   "verbose": false},
 
     "data_space_args": {"delta": 0.1,

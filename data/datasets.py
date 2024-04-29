@@ -4,6 +4,9 @@ from math import comb, factorial
 from scipy import integrate
 
 
+np.random.seed(2)
+
+
 def basic(noise=0):
     M = np.array(9*[1] + 9*[2] + 9*[3])
     T = np.array(3*(3*[10] + 3*[20] + 3*[30]))
