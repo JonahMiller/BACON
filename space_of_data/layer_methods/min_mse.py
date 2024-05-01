@@ -1,10 +1,11 @@
 import pandas as pd
+from statistics import fmean
+from sklearn.metrics import mean_squared_error as mse
 
 from utils import df_helper as df_helper
-from utils.gp import ranking
 
 
-class ranking_layer:
+class min_mse_layer:
     def __init__(self, df, laws_method, symbols, verbose=False):
         self.df = df
         self.laws_method = laws_method
@@ -54,7 +55,6 @@ class ranking_layer:
                 s_dfs = df_helper.deconstruct_df(df)
 
                 new_dummy_col, new_expr_col = pd.DataFrame(), pd.DataFrame()
-
                 for s_df in s_dfs:
                     dummy_col, expr_col = df_helper.linear_relns(s_df,
                                                                  self.lin_relns[expr][0],
@@ -73,8 +73,19 @@ class ranking_layer:
 
         return self.exprs_dict
 
+    @staticmethod
+    def calc_mse(df):
+        average_mse = 0
+        n = len(df.iloc[:, -2].unique())
+        rows = len(df.index)
+        for i in range(int(rows/n)):
+            col = df.iloc[i*n: (i+1)*n, -1]
+            mse_score = mse(col, len(col)*[fmean(col)])
+            average_mse += mse_score
+        return average_mse
+
     def rank_exprs(self):
-        best_ratio = 0
+        best_ave_mse = 1e100
         len_best_expr = 1
         if self.verbose:
             print("Ranking layer: Iteratively ranking the found expressions:")
@@ -82,16 +93,16 @@ class ranking_layer:
         if len(self.exprs_dict) > 1:
             for expr, dfs in self.exprs_dict.items():
                 if len(dfs) == 2:
-                    s_n_ratio = min(ranking(dfs[0]).signal_noise_ratio(),
-                                    ranking(dfs[1]).signal_noise_ratio())
+                    average_mse = (min_mse_layer.calc_mse(dfs[0])
+                                   + min_mse_layer.calc_mse(dfs[1]))/2
                 else:
-                    s_n_ratio = ranking(dfs[0]).signal_noise_ratio()
-                if s_n_ratio > best_ratio:
-                    best_ratio = s_n_ratio
+                    average_mse = min_mse_layer.calc_mse(dfs[0])
+                if average_mse < best_ave_mse:
+                    best_ave_mse = average_mse
                     best_expr = expr
                     len_best_expr = len(dfs)
                 if self.verbose:
-                    print(f"               {expr} has score {s_n_ratio}")
+                    print(f"               {expr} has average mse {average_mse}")
         else:
             best_expr = list(self.exprs_dict.keys())[0]
 

@@ -12,19 +12,23 @@ def new_df_col(expr, current_df):
     Notation fixes to allow expressions to be substituted.
     """
     # Simplify column names deterministically for sympy to detect equivalent equations
-    current_df.columns = [*current_df.columns[:-1], simplify(current_df.columns.tolist()[-1])]
+    current_df.columns = [*current_df.columns[:-2],
+                          simplify(current_df.columns.tolist()[-2]),
+                          simplify(current_df.columns.tolist()[-1])]
     indices = current_df.index.values
+    penul_col_name = current_df.columns.tolist()[-2]
     last_col_name = current_df.columns.tolist()[-1]
-    temp_df = current_df.rename(columns={last_col_name: Symbol("d_0")})
-    expr2 = simplify(expr).subs(last_col_name, Symbol("d_0"))
-    expr3 = expr2.subs(1/last_col_name, 1/Symbol("d_0"))
+    temp_df = current_df.rename(columns={penul_col_name: Symbol("d_0"),
+                                         last_col_name: Symbol("d_1")})
+    expr2 = expr.subs(penul_col_name, Symbol("d_0")).subs(last_col_name, Symbol("d_1"))
+    expr3 = expr2.subs(1/penul_col_name, 1/Symbol("d_0")).subs(1/last_col_name, 1/Symbol("d_1"))
     vars = temp_df.columns.tolist()
-    f = lambdify([tuple(vars)], expr3)
+    f = lambdify([tuple(vars)], simplify(expr3))
     new_col = np.array([(f(tuple(val))) for val in temp_df[list(vars)].to_numpy().tolist()])
-    return pd.DataFrame({expr: new_col}, index=indices)
+    return pd.DataFrame({simplify(expr): new_col}, index=indices)
 
 
-def update_df_with_single_expr(expression, df):
+def update_df_single_expr(expression, df):
     """
     Removes last 2 columns of df and replace with expression replacing
     these 2 columns.
@@ -34,7 +38,7 @@ def update_df_with_single_expr(expression, df):
     return df
 
 
-def update_df_with_multiple_expr(expression1, expression2, df):
+def update_df_multiple_expr(expression1, expression2, df):
     """
     Removes last 2 columns of df and replace with expressions replacing
     these 2 columns.
@@ -176,3 +180,27 @@ def score(init_df, eqns):
     loss = loss_helper.loss_calc(init_df, eqn).loss()
     print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with loss {loss}.")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+
+# https://stackoverflow.com/a/13821695
+def timeout(func, args=(), kwargs=None, timeout_duration=1, default=None):
+    kwargs = kwargs or {}
+    import signal
+
+    class TimeoutError(Exception):
+        pass
+
+    def handler(signum, frame):
+        raise TimeoutError()
+
+    # set the timeout handler
+    signal.signal(signal.SIGALRM, handler)
+    signal.alarm(timeout_duration)
+    try:
+        result = func(*args, **kwargs)
+    except TimeoutError:
+        result = default
+    finally:
+        signal.alarm(0)
+
+    return result

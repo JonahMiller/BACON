@@ -1,6 +1,7 @@
 from space_of_data.layer_methods.bacon3 import BACON_3_layer
 from space_of_data.layer_methods.gp_ranking import ranking_layer
 from space_of_data.layer_methods.popularity import popular_layer
+from space_of_data.layer_methods.min_mse import min_mse_layer
 
 
 def layer_main(layer_type, kwargs):
@@ -11,6 +12,8 @@ def layer_main(layer_type, kwargs):
             return lambda df, layer_method, afs: ranking_layer(df, layer_method, afs, **kwargs)
         elif layer_type == "popularity":
             return lambda df, layer_method, afs: popular_layer(df, layer_method, afs, **kwargs)
+        elif layer_type == "min_mse":
+            return lambda df, layer_method, afs: min_mse_layer(df, layer_method, afs, **kwargs)
 
     else:
         if layer_type == "bacon.3":
@@ -19,3 +22,5 @@ def layer_main(layer_type, kwargs):
             return ranking_layer
         elif layer_type == "popularity":
             return popular_layer
+        elif layer_type == "min_mse":
+            return min_mse_layer

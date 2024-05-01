@@ -6,6 +6,7 @@ import pandas as pd
 import data.datasets as data
 from space_of_laws.laws_manager import laws_main
 from space_of_data.layer_manager import layer_main
+
 from space_of_data.space_methods.data_space_manager import data_space
 from space_of_data.space_methods.mixture import mixture
 from space_of_data.space_methods.bacon5 import BACON_5
@@ -22,7 +23,7 @@ def ParseArgs():
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to the dataset")
     parser.add_argument("--space_of_data", type=str,
-                        choices=["bacon.3", "bacon.5", "gp_ranking",
+                        choices=["bacon.3", "bacon.5", "gp_ranking", "min_mse",
                                  "popularity", "mixture", "mcts"],
                         default=None, metavar="SD",
                         help="how to traverse the space of data")

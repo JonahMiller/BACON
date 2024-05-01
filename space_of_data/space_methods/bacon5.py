@@ -78,13 +78,13 @@ class BACON_5:
         if exprs:
             for expr in exprs:
                 if len(expr) == 3:
-                    backup_df = df_helper.update_df_with_single_expr(expr[0], backup_df)
+                    backup_df = df_helper.update_df_single_expr(expr[0], backup_df)
                 elif len(expr) == 6:
                     backup_backup_df = BACON_5.generate_backup_df(self.initial_df,
                                                                   backup_df.index.values,
                                                                   expr[4])
-                    backup_backup_df = df_helper.update_df_with_multiple_expr(expr[2], expr[3], backup_backup_df)
-                    backup_df = df_helper.update_df_with_multiple_expr(expr[2], expr[3], backup_df)
+                    backup_backup_df = df_helper.update_df_multiple_expr(expr[2], expr[3], backup_backup_df)
+                    backup_df = df_helper.update_df_multiple_expr(expr[2], expr[3], backup_df)
                     dummy_col, expr_col = df_helper.lin_reln_2_df(backup_df, backup_backup_df,
                                                                   expr[0], expr[1])
 
@@ -132,8 +132,8 @@ class BACON_5:
                                                            self.iteration_level)
                     backup_df = self.update_backup_df(backup_df, self.found_exprs, df_count)
 
-                    extra_vals_df = df_helper.update_df_with_multiple_expr(results[2][4], results[2][5], extra_vals_df)
-                    backup_df = df_helper.update_df_with_multiple_expr(results[2][4], results[2][5], backup_df)
+                    extra_vals_df = df_helper.update_df_multiple_expr(results[2][4], results[2][5], extra_vals_df)
+                    backup_df = df_helper.update_df_multiple_expr(results[2][4], results[2][5], backup_df)
 
                     dummy_col, expr_col = df_helper.lin_reln_2_df(extra_vals_df, backup_df,
                                                                   results[2][1], results[2][2])
@@ -152,7 +152,7 @@ class BACON_5:
                 else:
                     # Save results as new column for dataframe with correct indecies
                     new_expression = results[1]
-                    df = df_helper.update_df_with_single_expr(new_expression, df)
+                    df = df_helper.update_df_single_expr(new_expression, df)
                     self.found_exprs.append([new_expression,
                                              self.iteration_level,
                                              df_count])

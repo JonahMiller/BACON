@@ -58,9 +58,9 @@ class popular_layer:
         if lin_reln:
             self.symbols.append(lin_reln[0])
 
-            df = df_helper.update_df_with_multiple_expr(lin_reln[2],
-                                                        lin_reln[3],
-                                                        self.df)
+            df = df_helper.update_df_multiple_expr(lin_reln[2],
+                                                   lin_reln[3],
+                                                   self.df)
             s_dfs = df_helper.deconstruct_df(df)
 
             new_dummy_col, new_expr_col = pd.DataFrame(), pd.DataFrame()
@@ -78,7 +78,7 @@ class popular_layer:
             new_dfs = [n_df1, n_df2]
 
         else:
-            n_df = df_helper.update_df_with_single_expr(expr, self.df)
+            n_df = df_helper.update_df_single_expr(expr, self.df)
             new_dfs = [n_df]
 
         return new_dfs
