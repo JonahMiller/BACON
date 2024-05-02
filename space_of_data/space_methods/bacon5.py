@@ -117,7 +117,7 @@ class BACON_5:
                 small_df = df.iloc[:3, :]
                 indecies = small_df.index.values
 
-                results = self.laws_method(small_df, small_df.columns[-1], small_df.columns[-2], self.symbols)
+                results = self.laws_method(small_df, small_df.columns[-2], small_df.columns[-1], self.symbols)
 
                 # Special check for linear relationship added to dataframe
                 if isinstance(results[2], list):

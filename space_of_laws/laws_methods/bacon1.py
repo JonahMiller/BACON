@@ -11,6 +11,7 @@ warnings.filterwarnings('ignore')
 
 eta = Symbol("eta")
 nu = Symbol("nu")
+dummies = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']
 
 
 class BACON_1:
@@ -19,7 +20,7 @@ class BACON_1:
         self.init_symbols = list(initial_df)
         self.all_found_symbols = all_found_symbols
         self.data = [initial_df[col_name] for col_name in self.init_symbols]
-        self.symbols = [eta, nu]
+        self.symbols = [nu, eta]
         self.verbose = verbose
         self.epsilon = epsilon
         self.delta = delta
@@ -32,9 +33,7 @@ class BACON_1:
         iterations, the program returns the last data/symbol founds.
         '''
         self.lin_data = None
-        init_d, init_sy, self.update = self.initial_constant()
-        if self.update == "constant":
-            return init_d, self.subs_expr(init_sy), self.update
+        self.update = ""
 
         j = 0
         while self.update != "constant" and j < 6:
@@ -50,16 +49,6 @@ class BACON_1:
                 break
         return self.data[-1], self.subs_expr(self.symbols[-1]), self.lin_data
 
-    def initial_constant(self):
-        '''
-        Checks if any variables are initialised as constant.
-        '''
-        M = fmean(self.data[0])
-        if all(abs(M)*(1 - self.delta) < abs(v) < abs(M)*(1 + self.delta) for v in self.data[0]):
-            return self.data[0], self.symbols[0], "constant"
-        else:
-            return self.data, self.symbols, ""
-
     def bacon_instance(self, start, finish):
         '''
         A single bacon instance on the variables and data passed in. Follows the logic
@@ -72,7 +61,7 @@ class BACON_1:
         self.check_constant(b_, abs(b))
 
         if self.update != "constant":
-            if 1 - abs(r) < self.epsilon and abs(c) > 0.0000001:
+            if 1 - abs(r) < self.epsilon and abs(c) > 0.001:
                 self.linear(a_, b_, a, b)
 
             elif r > 0:
@@ -102,6 +91,12 @@ class BACON_1:
         '''
         Checks if the new term BACON.1 proposed is constant.
         '''
+        if len(self.symbols) == 2:
+            real_symb = self.subs_expr(symbol)
+            if len(real_symb.free_symbols) == 1:
+                if str(real_symb) not in dummies:
+                    return
+
         M = fmean(data)
         if all(M*(1 - self.delta) < val < M*(1 + self.delta) for val in data):
             self.update = "constant"
@@ -146,6 +141,6 @@ class BACON_1:
             print(f"         considering new variable {simplify(symbol_1/symbol_2)}")
 
     def subs_expr(self, expr):
-        e1 = expr.subs(eta, self.init_symbols[0])
-        e2 = e1.subs(nu, self.init_symbols[1])
+        e1 = expr.subs(nu, self.init_symbols[0])
+        e2 = e1.subs(eta, self.init_symbols[1])
         return e2

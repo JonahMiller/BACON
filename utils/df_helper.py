@@ -20,10 +20,10 @@ def new_df_col(expr, current_df):
     last_col_name = current_df.columns.tolist()[-1]
     temp_df = current_df.rename(columns={penul_col_name: Symbol("d_0"),
                                          last_col_name: Symbol("d_1")})
-    expr2 = expr.subs(penul_col_name, Symbol("d_0")).subs(last_col_name, Symbol("d_1"))
-    expr3 = expr2.subs(1/penul_col_name, 1/Symbol("d_0")).subs(1/last_col_name, 1/Symbol("d_1"))
+    sub_expr = simplify(expr).subs(penul_col_name, Symbol("d_0")).subs(last_col_name, Symbol("d_1"))
+    sub_expr2 = sub_expr.subs(1/penul_col_name, 1/Symbol("d_0")).subs(1/last_col_name, 1/Symbol("d_1"))
     vars = temp_df.columns.tolist()
-    f = lambdify([tuple(vars)], simplify(expr3))
+    f = lambdify([tuple(vars)], sub_expr2)
     new_col = np.array([(f(tuple(val))) for val in temp_df[list(vars)].to_numpy().tolist()])
     return pd.DataFrame({simplify(expr): new_col}, index=indices)
 
@@ -72,7 +72,6 @@ def check_const_col(dfs, eqns, delta, logging):
         mean = fmean(col)
         M = abs(mean)
 
-        # if all(M*(1 - delta) < abs(v) < M*(1 + delta) for v in df.iloc[:, -1].values):
         if len([v for v in col
                 if abs(v) < M*(1 - delta) or abs(v) > M*(1 + delta)]) \
                 <= np.ceil(delta*len(col)):
