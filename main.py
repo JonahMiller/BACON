@@ -10,7 +10,7 @@ from space_of_data.layer_manager import layer_main
 from space_of_data.space_methods.data_space_manager import data_space
 from space_of_data.space_methods.mixture import mixture
 from space_of_data.space_methods.bacon5 import BACON_5
-from space_of_data.space_methods.mcst2 import main_mcts
+from space_of_data.space_methods.mcts import main_mcts
 
 import warnings
 warnings.filterwarnings("ignore")
