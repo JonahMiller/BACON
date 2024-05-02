@@ -40,7 +40,10 @@ class min_mse_layer:
             print(f"Ranking layer: Expressions found are {self.exprs_found}")
 
         if invalid_returns == len(s_dfs):
-            raise Exception("No relationships found compatible with this program")
+            # raise Exception("No relationships found compatible with this program")
+            return "Invalid"
+
+        return "Continue"
 
     def construct_dfs(self):
         self.exprs_dict = {}
@@ -87,10 +90,11 @@ class min_mse_layer:
     def rank_exprs(self):
         best_ave_mse = 1e100
         len_best_expr = 1
-        if self.verbose:
-            print("Ranking layer: Iteratively ranking the found expressions:")
 
         if len(self.exprs_dict) > 1:
+            if self.verbose:
+                print("Ranking layer: Iteratively ranking the found expressions:")
+
             for expr, dfs in self.exprs_dict.items():
                 if len(dfs) == 2:
                     average_mse = (min_mse_layer.calc_mse(dfs[0])
@@ -105,13 +109,17 @@ class min_mse_layer:
                     print(f"               {expr} has average mse {average_mse}")
         else:
             best_expr = list(self.exprs_dict.keys())[0]
+            len_best_expr = len(self.exprs_dict[best_expr])
 
         if len_best_expr == 2:
             self.symbols.append(self.lin_relns[best_expr][0])
         return best_expr
 
     def run_single_iteration(self):
-        self.find_exprs()
+        return_status = self.find_exprs()
+        if return_status == "Invalid":
+            return None, None
+
         self.construct_dfs()
         expr = self.rank_exprs()
         return self.exprs_dict[expr], self.symbols

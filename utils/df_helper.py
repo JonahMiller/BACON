@@ -20,10 +20,12 @@ def new_df_col(expr, current_df):
     last_col_name = current_df.columns.tolist()[-1]
     temp_df = current_df.rename(columns={penul_col_name: Symbol("d_0"),
                                          last_col_name: Symbol("d_1")})
-    sub_expr = simplify(expr).subs(penul_col_name, Symbol("d_0")).subs(last_col_name, Symbol("d_1"))
+    sub_expr = expr.subs(penul_col_name, Symbol("d_0")).subs(last_col_name, Symbol("d_1"))
     sub_expr2 = sub_expr.subs(1/penul_col_name, 1/Symbol("d_0")).subs(1/last_col_name, 1/Symbol("d_1"))
+    sub_expr3 = simplify(sub_expr2).subs(penul_col_name, Symbol("d_0")).subs(last_col_name, Symbol("d_1"))
+    sub_expr4 = sub_expr3.subs(1/penul_col_name, 1/Symbol("d_0")).subs(1/last_col_name, 1/Symbol("d_1"))
     vars = temp_df.columns.tolist()
-    f = lambdify([tuple(vars)], sub_expr2)
+    f = lambdify([tuple(vars)], sub_expr4)
     new_col = np.array([(f(tuple(val))) for val in temp_df[list(vars)].to_numpy().tolist()])
     return pd.DataFrame({simplify(expr): new_col}, index=indices)
 
@@ -74,7 +76,7 @@ def check_const_col(dfs, eqns, delta, logging):
 
         if len([v for v in col
                 if abs(v) < M*(1 - delta) or abs(v) > M*(1 + delta)]) \
-                <= np.ceil(delta*len(col)):
+                <= np.ceil(delta*len(col)/2):
             if logging:
                 print(f"SCORE : {df.columns.tolist()[-1]} is constant at {mean}")
             eqns.append(Eq(df.columns.tolist()[-1], mean))

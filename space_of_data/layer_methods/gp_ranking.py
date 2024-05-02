@@ -94,6 +94,7 @@ class ranking_layer:
                     print(f"               {expr} has score {s_n_ratio}")
         else:
             best_expr = list(self.exprs_dict.keys())[0]
+            len_best_expr = len(self.exprs_dict[best_expr])
 
         if len_best_expr == 2:
             self.symbols.append(self.lin_relns[best_expr][0])

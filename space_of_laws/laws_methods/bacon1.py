@@ -36,7 +36,7 @@ class BACON_1:
         self.update = ""
 
         j = 0
-        while self.update != "constant" and j < 6:
+        while self.update != "constant" and j < 8:
             sy_start = len(self.symbols)
             self.bacon_instance(0, -1)
             if self.update == "product" or self.update == "division":
@@ -47,6 +47,12 @@ class BACON_1:
             sy_end = len(self.symbols)
             if sy_start == sy_end or self.update == "linear":
                 break
+
+        if self.update != "constant" and self.update != "linear":
+            if self.verbose:
+                print("BACON 1: No relation found within acceptable parameters.")
+            return None, None, None
+
         return self.data[-1], self.subs_expr(self.symbols[-1]), self.lin_data
 
     def bacon_instance(self, start, finish):

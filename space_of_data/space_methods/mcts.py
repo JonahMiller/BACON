@@ -11,11 +11,6 @@ from space_of_laws.laws_methods.bacon1 import BACON_1
 from space_of_data.layer_methods.min_mse import min_mse_layer
 
 
-def update_dict(key, value):
-    if key not in df_dict:
-        df_dict[key] = value
-
-
 def bacon_1(df, col_1, col_2, all_found_symbols,
             epsilon, delta, verbose=False):
     """
@@ -52,7 +47,6 @@ class MonteCarloTreeSearchNode():
 
     def untried_actions(self):
         self._untried_actions = get_legal_actions()
-        # print(self._untried_actions)
         return self._untried_actions
 
     def q(self):
@@ -80,7 +74,6 @@ class MonteCarloTreeSearchNode():
         while not is_game_over(current_rollout_state):
             possible_moves = get_legal_actions()
             action = self.rollout_policy(possible_moves)
-            print(action)
             new_state = move(current_rollout_state, action)
             current_rollout_state = new_state
         return game_result(current_rollout_state, self.initial_df)
@@ -121,26 +114,33 @@ class MonteCarloTreeSearchNode():
 
 
 def get_legal_actions():
-    epsilon = [0.00001, 0.0001, 0.001]
-    delta = [0.02, 0.07, 0.14]
-    actions = list(product(epsilon, delta))
+    epsilon = [0.00001, 0.0001, 0.001, 0.01]
+    delta = [0.05, 0.07, 0.1, 0.14, 0.18, 0.22]
+    Delta = [0.1, 0.2, 0.3]
+    actions = list(product(epsilon, delta, Delta))
     return actions
 
 
 def is_game_over(var_list):
-    if df_dict[str(var_list)]["dfs"]:
+    if "dfs" in df_dict[str(var_list)]:
         return False
+    print("game is over!")
     return True
 
 
 def move(var_list, action):
+    print(action)
     dict_entry = df_dict[str(var_list)]
     dfs = dict_entry["dfs"]
-    eqns = dict_entry["eqns"]
+    if "eqns" in dict_entry:
+        eqns = dict_entry["eqns"]
+    else:
+        eqns = []
     symbols = list(sum(sym for sym in list(var_list)).free_symbols)
     new_dfs = []
     final_eqns = []
     df_len = len(dfs[0].columns)
+
     for df in dfs:
         if df_len > 2:
             layer_in_context = min_mse_layer(df, lambda df, col_1, col_2, afs:
@@ -148,22 +148,36 @@ def move(var_list, action):
                                                      epsilon=action[0], delta=action[1]),
                                              symbols)
             new_df, symbols = layer_in_context.run_single_iteration()
+
+            if not new_df:
+                print(f"No result with this action 1 - rerunning for new action: {var_list}")
+                return var_list
+
             new_dfs.extend(new_df)
+
         elif df_len == 2:
             ave_df = df_helper.average_df(df)
             results = bacon_1(ave_df, ave_df.columns[0], ave_df.columns[1], symbols,
                               epsilon=action[0], delta=action[1])
+
+            if results[0] is None:
+                print(f"No result with this action 2 - rerunning for new action: {var_list}")
+                return var_list
+
             final_eqns.append(Eq(results[1], fmean(results[0])))
 
     if df_len > 2:
-        dfs, eqns = df_helper.check_const_col(new_dfs, eqns, 0.1, logging=False)
-        var_list = [eqn.lhs for eqn in eqns] + [df.columns.tolist()[-1] for df in dfs] + [df_len - 1]
-        update_dict(key=str(var_list), value={"dfs": dfs, "eqns": eqns})
+        dfs, new_eqns = df_helper.check_const_col(new_dfs, eqns, delta=action[2], logging=False)
+        var_list = [eqn.lhs for eqn in new_eqns] + [df.columns.tolist()[-1] for df in dfs] + [df_len - 1]
+        if len(new_eqns) != 0:
+            df_dict[str(var_list)] = {"dfs": dfs, "eqns": new_eqns}
+        else:
+            df_dict[str(var_list)] = {"dfs": dfs}
         return var_list
     else:
         final_eqns = eqns + final_eqns
         var_list = [eqn.lhs for eqn in final_eqns] + [1]
-        update_dict(key=str(var_list), value={"dfs": [], "eqns": final_eqns})
+        df_dict[str(var_list)] = {"final_eqns": final_eqns}
         return var_list
 
 
@@ -188,7 +202,7 @@ def score_func(score, num_dummy, num_var, actual_var):
 
 def game_result(var_list, initial_df):
     dict_entry = df_dict[str(var_list)]
-    eqns = dict_entry["eqns"]
+    eqns = dict_entry["final_eqns"]
     num_dummy = len(eqns) - 1
     # print(eqns)
     for var in list(reversed(initial_df.columns)):
@@ -212,19 +226,19 @@ def game_result(var_list, initial_df):
                 return score_func(score, num_dummy, num_var, len(initial_df.columns))
         except Exception as e:
             print(e)
+            print(eqns)
             return -1
 
 
 def main_mcts(initial_df, init_state):
     global df_dict
-    dict_state = {"dfs": [initial_df], "eqns": []}
+    dict_state = {"dfs": [initial_df]}
     df_dict = {str(init_state): dict_state}
     while dict_state["dfs"]:
     # for _ in range(1):
         print("@@@@@@@@@@@@@@@@@@@@@@@")
         root = MonteCarloTreeSearchNode(initial_df, state=init_state)
         init_state, dict_state = root.best_action()
-        print(df_dict)
         print(init_state)
         df_dict = {str(init_state): dict_state}
     print(f"FINAL NODE STATE IS {init_state}")
