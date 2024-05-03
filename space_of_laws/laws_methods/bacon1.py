@@ -17,6 +17,7 @@ dummies = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']
 class BACON_1:
     def __init__(self, initial_df, all_found_symbols,
                  epsilon=0.001, delta=0.1, verbose=False):
+        self.initial_df = initial_df
         self.init_symbols = list(initial_df)
         self.all_found_symbols = all_found_symbols
         self.data = [initial_df[col_name] for col_name in self.init_symbols]
@@ -36,7 +37,7 @@ class BACON_1:
         self.update = ""
 
         j = 0
-        while self.update != "constant" and j < 8:
+        while self.update != "constant" and j < 6:
             sy_start = len(self.symbols)
             self.bacon_instance(0, -1)
             if self.update == "product" or self.update == "division":
@@ -51,7 +52,11 @@ class BACON_1:
         if self.update != "constant" and self.update != "linear":
             if self.verbose:
                 print("BACON 1: No relation found within acceptable parameters.")
-            return None, None, None
+                print("         Rerunning with increased epsilon and delta params.")
+            new_eps = 1.5*self.epsilon
+            new_delta = 1.1*self.delta
+            return BACON_1(self.initial_df, self.all_found_symbols,
+                           new_eps, new_delta, self.verbose).bacon_iterations()
 
         return self.data[-1], self.subs_expr(self.symbols[-1]), self.lin_data
 

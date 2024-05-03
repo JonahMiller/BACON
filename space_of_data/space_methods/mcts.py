@@ -46,14 +46,13 @@ class MonteCarloTreeSearchNode():
         return
 
     def untried_actions(self):
-        self._untried_actions = get_legal_actions()
+        self._untried_actions = get_legal_actions(self.state)
         return self._untried_actions
 
     def q(self):
         score = 0
         for key, val in self._results.items():
             score += key*val
-        # print(f"score is {score}")
         return score
 
     def n(self):
@@ -72,7 +71,7 @@ class MonteCarloTreeSearchNode():
     def rollout(self):
         current_rollout_state = self.state
         while not is_game_over(current_rollout_state):
-            possible_moves = get_legal_actions()
+            possible_moves = get_legal_actions(current_rollout_state)
             action = self.rollout_policy(possible_moves)
             new_state = move(current_rollout_state, action)
             current_rollout_state = new_state
@@ -104,8 +103,10 @@ class MonteCarloTreeSearchNode():
         return current_node
 
     def best_action(self):
-        simulation_no = 500
-        for _ in range(simulation_no):
+        simulation_no = 50
+        for idx in range(simulation_no):
+            if idx % 5 == 0:
+                print(f"SIMULATION NUMBER {idx}")
             v = self._tree_policy()
             reward = v.rollout()
             print(reward)
@@ -113,11 +114,10 @@ class MonteCarloTreeSearchNode():
         return self.best_child(c_param=0.).state, df_dict[str(self.best_child(c_param=0.).state)]
 
 
-def get_legal_actions():
-    epsilon = [0.00001, 0.0001, 0.001, 0.01]
-    delta = [0.05, 0.07, 0.1, 0.14, 0.18, 0.22]
-    Delta = [0.1, 0.2, 0.3]
-    actions = list(product(epsilon, delta, Delta))
+def get_legal_actions(var_list):
+    epsilon = [0.0001, 0.001]
+    delta = [0.03, 0.07]
+    actions = list(product(epsilon, delta))
     return actions
 
 
@@ -129,7 +129,6 @@ def is_game_over(var_list):
 
 
 def move(var_list, action):
-    print(action)
     dict_entry = df_dict[str(var_list)]
     dfs = dict_entry["dfs"]
     if "eqns" in dict_entry:
@@ -137,10 +136,8 @@ def move(var_list, action):
     else:
         eqns = []
     symbols = list(sum(sym for sym in list(var_list)).free_symbols)
-    new_dfs = []
-    final_eqns = []
+    new_dfs, final_eqns = [], []
     df_len = len(dfs[0].columns)
-
     for df in dfs:
         if df_len > 2:
             layer_in_context = min_mse_layer(df, lambda df, col_1, col_2, afs:
@@ -148,35 +145,30 @@ def move(var_list, action):
                                                      epsilon=action[0], delta=action[1]),
                                              symbols)
             new_df, symbols = layer_in_context.run_single_iteration()
-
-            if not new_df:
-                print(f"No result with this action 1 - rerunning for new action: {var_list}")
-                return var_list
-
             new_dfs.extend(new_df)
 
         elif df_len == 2:
             ave_df = df_helper.average_df(df)
             results = bacon_1(ave_df, ave_df.columns[0], ave_df.columns[1], symbols,
                               epsilon=action[0], delta=action[1])
-
-            if results[0] is None:
-                print(f"No result with this action 2 - rerunning for new action: {var_list}")
-                return var_list
-
             final_eqns.append(Eq(results[1], fmean(results[0])))
 
     if df_len > 2:
-        dfs, new_eqns = df_helper.check_const_col(new_dfs, eqns, delta=action[2], logging=False)
-        var_list = [eqn.lhs for eqn in new_eqns] + [df.columns.tolist()[-1] for df in dfs] + [df_len - 1]
-        if len(new_eqns) != 0:
-            df_dict[str(var_list)] = {"dfs": dfs, "eqns": new_eqns}
-        else:
+        dfs, eqns = df_helper.check_const_col(new_dfs, eqns, delta=0.1, logging=False)
+        var_list = [eqn.lhs for eqn in eqns] + \
+                   [df.columns.tolist()[-1] for df in dfs] + \
+                   [df_len - 1]
+        if len(eqns) != 0 and len(dfs) != 0:
+            df_dict[str(var_list)] = {"dfs": dfs, "eqns": eqns}
+        elif len(eqns) == 0 and len(dfs) != 0:
             df_dict[str(var_list)] = {"dfs": dfs}
+        elif len(eqns) != 0 and len(dfs) == 0:
+            df_dict[str(var_list)] = {"final_eqns": eqns}
         return var_list
     else:
         final_eqns = eqns + final_eqns
-        var_list = [eqn.lhs for eqn in final_eqns] + [1]
+        var_list = [eqn.lhs for eqn in final_eqns] + \
+                   [1]
         df_dict[str(var_list)] = {"final_eqns": final_eqns}
         return var_list
 
@@ -202,9 +194,12 @@ def score_func(score, num_dummy, num_var, actual_var):
 
 def game_result(var_list, initial_df):
     dict_entry = df_dict[str(var_list)]
+    if "score" in dict_entry:
+        return dict_entry["score"]
+
     eqns = dict_entry["final_eqns"]
     num_dummy = len(eqns) - 1
-    # print(eqns)
+    print(eqns)
     for var in list(reversed(initial_df.columns)):
         try:
             eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
@@ -213,20 +208,23 @@ def game_result(var_list, initial_df):
                                     timeout_duration=1, default="fail")
             if eqn == "fail":
                 # print("equations not combining")
+                df_dict[str(var_list)] = {"final_eqns": eqns, "score": -0.75}
                 return -0.75
 
             score = loss_helper.loss_calc(initial_df, eqn).loss()
 
             if isinstance(score, complex):
                 # print("score is complex - likely solvable by hand")
+                df_dict[str(var_list)] = {"final_eqns": eqns, "score": -0.5, "eqn_form": eqn}
                 return -0.5
-
             else:
                 num_var = len(eqn.free_symbols)
-                return score_func(score, num_dummy, num_var, len(initial_df.columns))
-        except Exception as e:
-            print(e)
-            print(eqns)
+                final_score = score_func(score, num_dummy, num_var, len(initial_df.columns))
+                df_dict[str(var_list)] = {"final_eqns": eqns, "score": final_score, "eqn_form": eqn}
+                return final_score
+
+        except Exception:
+            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -1}
             return -1
 
 
@@ -234,11 +232,11 @@ def main_mcts(initial_df, init_state):
     global df_dict
     dict_state = {"dfs": [initial_df]}
     df_dict = {str(init_state): dict_state}
-    while dict_state["dfs"]:
-    # for _ in range(1):
+    while "dfs" in dict_state:
         print("@@@@@@@@@@@@@@@@@@@@@@@")
         root = MonteCarloTreeSearchNode(initial_df, state=init_state)
         init_state, dict_state = root.best_action()
         print(init_state)
         df_dict = {str(init_state): dict_state}
     print(f"FINAL NODE STATE IS {init_state}")
+    print(f"FINAL EQN IS {df_dict[str(init_state)]['eqn_form']}")
