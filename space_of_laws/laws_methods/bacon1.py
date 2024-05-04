@@ -30,14 +30,14 @@ class BACON_1:
         '''
         Runs the BACON iterations and returns the constant variables with its value.
         If the program already has constants they're returned. A maximum complexity
-        that can be found is induced by j = 5. If there is no update on the bacon
+        that can be found is induced by j = 3. If there is no update on the bacon
         iterations, the program returns the last data/symbol founds.
         '''
         self.lin_data = None
         self.update = ""
 
         j = 0
-        while self.update != "constant" and j < 6:
+        while self.update != "constant" and j < 4:
             sy_start = len(self.symbols)
             self.bacon_instance(0, -1)
             if self.update == "product" or self.update == "division":

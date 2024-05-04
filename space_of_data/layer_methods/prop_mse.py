@@ -1,12 +1,13 @@
 import pandas as pd
 from statistics import fmean
+import random
 from sklearn.metrics import mean_squared_error as mse
 
 from utils import df_helper as df_helper
 
 
-class min_mse_layer:
-    def __init__(self, df, laws_method, symbols, verbose=False):
+class prop_mse_layer:
+    def __init__(self, df, laws_method, symbols, verbose=True):
         self.df = df
         self.laws_method = laws_method
         self.symbols = symbols
@@ -90,7 +91,8 @@ class min_mse_layer:
         return average_mse
 
     def rank_exprs(self):
-        best_ave_mse = 1e100
+        best_mses = []
+        mse_dict = {}
         len_best_expr = 1
 
         if len(self.exprs_dict) > 1:
@@ -99,16 +101,30 @@ class min_mse_layer:
 
             for expr, dfs in self.exprs_dict.items():
                 if len(dfs) == 2:
-                    average_mse = (min_mse_layer.calc_mse(dfs[0])
-                                   + min_mse_layer.calc_mse(dfs[1]))/2
+                    average_mse = (prop_mse_layer.calc_mse(dfs[0])
+                                   + prop_mse_layer.calc_mse(dfs[1]))/2
                 else:
-                    average_mse = min_mse_layer.calc_mse(dfs[0])
-                if average_mse < best_ave_mse:
-                    best_ave_mse = average_mse
-                    best_expr = expr
-                    len_best_expr = len(dfs)
+                    average_mse = prop_mse_layer.calc_mse(dfs[0])
+                mse_dict[average_mse] = [expr, len(dfs)]
+
+                if len(best_mses) < 2:
+                    best_mses.append(average_mse)
+                    max_mse = max(best_mses)
+                elif average_mse < max_mse:
+                    best_mses.append(average_mse)
+                    best_mses.remove(max_mse)
+                    max_mse = max(best_mses)
+
                 if self.verbose:
                     print(f"           {expr} has average mse {average_mse}")
+
+            min_mse = min(best_mses)
+            prop_sample = min_mse/max_mse
+
+            if random.random() < prop_sample:
+                best_expr, len_best_expr = mse_dict[max_mse]
+            else:
+                best_expr, len_best_expr = mse_dict[min_mse]
         else:
             best_expr = list(self.exprs_dict.keys())[0]
             len_best_expr = len(self.exprs_dict[best_expr])

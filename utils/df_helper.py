@@ -6,26 +6,53 @@ from sympy import Symbol, Eq, lambdify, simplify, factor
 import utils.losses as loss_helper
 
 
+def new_eqn(mini_expr, temp_val, full_expr):
+    """
+    Messy solution to detect equivalent expressions using Sympy.
+    """
+    new_expr = full_expr.subs(mini_expr,
+                              temp_val).subs(1/mini_expr,
+                                             1/temp_val)
+    if temp_val in new_expr.free_symbols:
+        return new_expr
+    else:
+        new_expr = simplify(full_expr).subs(mini_expr,
+                                            temp_val).subs(1/mini_expr,
+                                                           1/temp_val)
+        if temp_val in new_expr.free_symbols:
+            return new_expr
+        else:
+            new_expr = full_expr.subs(simplify(mini_expr),
+                                      temp_val).subs(1/simplify(mini_expr),
+                                                     1/temp_val)
+            if temp_val in new_expr.free_symbols:
+                return new_expr
+            else:
+                new_expr = simplify(full_expr).subs(simplify(mini_expr),
+                                                    temp_val).subs(1/simplify(mini_expr),
+                                                                   1/temp_val)
+                if temp_val in new_expr.free_symbols:
+                    return new_expr
+                else:
+                    return full_expr
+
+
 def new_df_col(expr, current_df):
     """
     Creates a new dataframe column based on expression found by smaller df.
     Notation fixes to allow expressions to be substituted.
     """
-    # Simplify column names deterministically for sympy to detect equivalent equations
-    current_df.columns = [*current_df.columns[:-2],
-                          simplify(current_df.columns.tolist()[-2]),
-                          simplify(current_df.columns.tolist()[-1])]
-    indices = current_df.index.values
     penul_col_name = current_df.columns.tolist()[-2]
     last_col_name = current_df.columns.tolist()[-1]
+    indices = current_df.index.values
+
+    expr2 = new_eqn(penul_col_name, Symbol("d_0"), expr)
+    expr3 = new_eqn(last_col_name, Symbol("d_1"), expr2)
+
     temp_df = current_df.rename(columns={penul_col_name: Symbol("d_0"),
                                          last_col_name: Symbol("d_1")})
-    sub_expr = expr.subs(penul_col_name, Symbol("d_0")).subs(last_col_name, Symbol("d_1"))
-    sub_expr2 = sub_expr.subs(1/penul_col_name, 1/Symbol("d_0")).subs(1/last_col_name, 1/Symbol("d_1"))
-    sub_expr3 = simplify(sub_expr2).subs(penul_col_name, Symbol("d_0")).subs(last_col_name, Symbol("d_1"))
-    sub_expr4 = sub_expr3.subs(1/penul_col_name, 1/Symbol("d_0")).subs(1/last_col_name, 1/Symbol("d_1"))
     vars = temp_df.columns.tolist()
-    f = lambdify([tuple(vars)], sub_expr4)
+    f = lambdify([tuple(vars)], expr3)
     new_col = np.array([(f(tuple(val))) for val in temp_df[list(vars)].to_numpy().tolist()])
     return pd.DataFrame({simplify(expr): new_col}, index=indices)
 

@@ -1,14 +1,14 @@
 # https://ai-boson.github.io/mcts/
 import numpy as np
 from statistics import fmean
-from sympy import Eq
+from sympy import Eq, factor
 from itertools import product
 from collections import defaultdict
 
 from utils import df_helper
 from utils import losses as loss_helper
 from space_of_laws.laws_methods.bacon1 import BACON_1
-from space_of_data.layer_methods.min_mse import min_mse_layer
+from space_of_data.layer_methods.prop_mse import prop_mse_layer
 
 
 def bacon_1(df, col_1, col_2, all_found_symbols,
@@ -140,10 +140,10 @@ def move(var_list, action):
     df_len = len(dfs[0].columns)
     for df in dfs:
         if df_len > 2:
-            layer_in_context = min_mse_layer(df, lambda df, col_1, col_2, afs:
-                                             bacon_1(df, col_1, col_2, afs,
-                                                     epsilon=action[0], delta=action[1]),
-                                             symbols)
+            layer_in_context = prop_mse_layer(df, lambda df, col_1, col_2, afs:
+                                              bacon_1(df, col_1, col_2, afs,
+                                                      epsilon=action[0], delta=action[1]),
+                                              symbols)
             new_df, symbols = layer_in_context.run_single_iteration()
             new_dfs.extend(new_df)
 
@@ -239,4 +239,5 @@ def main_mcts(initial_df, init_state):
         print(init_state)
         df_dict = {str(init_state): dict_state}
     print(f"FINAL NODE STATE IS {init_state}")
-    print(f"FINAL EQN IS {df_dict[str(init_state)]['eqn_form']}")
+    eqn = df_dict[str(init_state)]['eqn_form']
+    print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)}")
