@@ -5,7 +5,7 @@ from utils.gp import ranking
 
 
 class ranking_layer:
-    def __init__(self, df, laws_method, symbols, verbose=False):
+    def __init__(self, df, laws_method, symbols, verbose=True):
         self.df = df
         self.laws_method = laws_method
         self.symbols = symbols

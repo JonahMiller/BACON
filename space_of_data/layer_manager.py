@@ -1,31 +1,9 @@
-from space_of_data.layer_methods.bacon3 import BACON_3_layer
-from space_of_data.layer_methods.gp_ranking import ranking_layer
-from space_of_data.layer_methods.popularity import popular_layer
-from space_of_data.layer_methods.min_mse import min_mse_layer
-from space_of_data.layer_methods.prop_mse import prop_mse_layer
+from space_of_data.layer_methods.layer_select import layer
 
 
 def layer_main(layer_type, kwargs):
     if kwargs:
-        if layer_type == "bacon.3":
-            return lambda df, layer_method, afs: BACON_3_layer(df, layer_method, afs, **kwargs)
-        elif layer_type == "gp_ranking":
-            return lambda df, layer_method, afs: ranking_layer(df, layer_method, afs, **kwargs)
-        elif layer_type == "popularity":
-            return lambda df, layer_method, afs: popular_layer(df, layer_method, afs, **kwargs)
-        elif layer_type == "min_mse":
-            return lambda df, layer_method, afs: min_mse_layer(df, layer_method, afs, **kwargs)
-        elif layer_type == "prop_mse":
-            return lambda df, layer_method, afs: prop_mse_layer(df, layer_method, afs, **kwargs)
+        return lambda df, laws_method, afs: layer(df, laws_method, afs, layer_type, **kwargs)
 
     else:
-        if layer_type == "bacon.3":
-            return BACON_3_layer
-        elif layer_type == "gp_ranking":
-            return ranking_layer
-        elif layer_type == "popularity":
-            return popular_layer
-        elif layer_type == "min_mse":
-            return min_mse_layer
-        elif layer_type == "prop_mse":
-            return prop_mse_layer
+        return lambda df, laws_method, afs: layer(df, laws_method, afs, layer_type)

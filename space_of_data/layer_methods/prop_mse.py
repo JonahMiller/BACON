@@ -101,8 +101,8 @@ class prop_mse_layer:
 
             for expr, dfs in self.exprs_dict.items():
                 if len(dfs) == 2:
-                    average_mse = (prop_mse_layer.calc_mse(dfs[0])
-                                   + prop_mse_layer.calc_mse(dfs[1]))/2
+                    average_mse = min(prop_mse_layer.calc_mse(dfs[0]),
+                                      prop_mse_layer.calc_mse(dfs[1]))
                 else:
                     average_mse = prop_mse_layer.calc_mse(dfs[0])
                 mse_dict[average_mse] = [expr, len(dfs)]
@@ -131,6 +131,7 @@ class prop_mse_layer:
 
         if len_best_expr == 2:
             self.symbols.append(self.lin_relns[best_expr][0])
+        # raise Exception
         return best_expr
 
     def run_single_iteration(self):

@@ -86,7 +86,7 @@ class MonteCarloTreeSearchNode():
     def is_fully_expanded(self):
         return len(self._untried_actions) == 0
 
-    def best_child(self, c_param=0.8):
+    def best_child(self, c_param=1):
         choices_weights = [(c.q() / c.n()) + c_param * np.sqrt((2 * np.log(self.n()) / c.n())) for c in self.children]
         return self.children[np.argmax(choices_weights)]
 
@@ -116,7 +116,7 @@ class MonteCarloTreeSearchNode():
 
 def get_legal_actions(var_list):
     epsilon = [0.0001, 0.001]
-    delta = [0.03, 0.07]
+    delta = [0.04, 0.08]
     actions = list(product(epsilon, delta))
     return actions
 
