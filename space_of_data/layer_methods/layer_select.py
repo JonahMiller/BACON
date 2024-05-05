@@ -4,14 +4,17 @@ import random
 from sklearn.metrics import mean_squared_error as mse
 
 from utils import df_helper as df_helper
+from utils.gp import ranking
 
 
-class prop_mse_layer:
-    def __init__(self, df, laws_method, symbols, verbose=True):
+class layer:
+    def __init__(self, df, laws_method, symbols, ranking_method, verbose=True):
         self.df = df
         self.laws_method = laws_method
         self.symbols = symbols
         self.verbose = verbose
+
+        self.ranking_method = ranking_method
 
     def find_exprs(self):
         self.exprs_found = {}
@@ -38,10 +41,9 @@ class prop_mse_layer:
                 invalid_returns += 1
 
         if self.verbose:
-            print(f"MSE layer: Expressions found are {self.exprs_found}")
+            print(f"Ranking layer: Expressions found are {self.exprs_found}")
 
         if invalid_returns == len(s_dfs):
-            # raise Exception("No relationships found compatible with this program")
             return "Invalid"
 
         return "Continue"
@@ -77,6 +79,64 @@ class prop_mse_layer:
 
         return self.exprs_dict
 
+    def rank_gp(self):
+        best_ratio = 0
+        len_best_expr = 1
+        if self.verbose:
+            print("Ranking layer: Iteratively scoring the found by GP signal/noise ratio:")
+
+        if len(self.exprs_dict) > 1:
+            for expr, dfs in self.exprs_dict.items():
+                if len(dfs) == 2:
+                    s_n_ratio = min(ranking(dfs[0]).signal_noise_ratio(),
+                                    ranking(dfs[1]).signal_noise_ratio())
+                else:
+                    s_n_ratio = ranking(dfs[0]).signal_noise_ratio()
+                if s_n_ratio > best_ratio:
+                    best_ratio = s_n_ratio
+                    best_expr = expr
+                    len_best_expr = len(dfs)
+                if self.verbose:
+                    print(f"               {expr} has score {s_n_ratio}")
+        else:
+            best_expr = list(self.exprs_dict.keys())[0]
+            len_best_expr = len(self.exprs_dict[best_expr])
+
+        if len_best_expr == 2:
+            self.symbols.append(self.lin_relns[best_expr][0])
+        return best_expr
+
+    def rank_popularity(self):
+        best_expr = max(self.exprs_found, key=self.exprs_found.get)
+
+        if best_expr in self.lin_relns:
+            lin_reln = self.lin_relns[best_expr]
+        else:
+            lin_reln = None
+
+        if lin_reln:
+            self.symbols.append(self.lin_relns[best_expr][0])
+
+        self.exprs_found = {best_expr: self.exprs_found[best_expr]}
+        return best_expr
+
+    def rank_bacon_3(self):
+        if len(self.exprs_found) != 1:
+            raise Exception("Ranking layer: No relationships found compatible with BACON.3")
+        else:
+            best_expr = list(self.exprs_found.keys())[0]
+
+        if best_expr in self.lin_relns:
+            lin_reln = self.lin_relns[best_expr]
+        else:
+            lin_reln = None
+
+        if lin_reln:
+            self.symbols.append(self.lin_relns[best_expr][0])
+
+        self.exprs_found = {best_expr: self.exprs_found[best_expr]}
+        return best_expr
+
     @staticmethod
     def calc_mse(df):
         average_mse = 0
@@ -90,21 +150,49 @@ class prop_mse_layer:
             average_mse += mse_score
         return average_mse
 
-    def rank_exprs(self):
+    def rank_min_mse(self):
+        best_ave_mse = 1e100
+        len_best_expr = 1
+
+        if len(self.exprs_dict) > 1:
+            if self.verbose:
+                print("Ranking layer: Iteratively ranking the found expressions:")
+
+            for expr, dfs in self.exprs_dict.items():
+                if len(dfs) == 2:
+                    average_mse = min(layer.calc_mse(dfs[0]),
+                                      layer.calc_mse(dfs[1]))
+                else:
+                    average_mse = layer.calc_mse(dfs[0])
+                if average_mse < best_ave_mse:
+                    best_ave_mse = average_mse
+                    best_expr = expr
+                    len_best_expr = len(dfs)
+                if self.verbose:
+                    print(f"               {expr} has average mse {average_mse}")
+        else:
+            best_expr = list(self.exprs_dict.keys())[0]
+            len_best_expr = len(self.exprs_dict[best_expr])
+
+        if len_best_expr == 2:
+            self.symbols.append(self.lin_relns[best_expr][0])
+        return best_expr
+
+    def rank_propto_mse(self):
         best_mses = []
         mse_dict = {}
         len_best_expr = 1
 
         if len(self.exprs_dict) > 1:
             if self.verbose:
-                print("MSE layer: Iteratively ranking the found expressions:")
+                print("Ranking layer: Iteratively ranking the found expressions:")
 
             for expr, dfs in self.exprs_dict.items():
                 if len(dfs) == 2:
-                    average_mse = min(prop_mse_layer.calc_mse(dfs[0]),
-                                      prop_mse_layer.calc_mse(dfs[1]))
+                    average_mse = min(layer.calc_mse(dfs[0]),
+                                      layer.calc_mse(dfs[1]))
                 else:
-                    average_mse = prop_mse_layer.calc_mse(dfs[0])
+                    average_mse = layer.calc_mse(dfs[0])
                 mse_dict[average_mse] = [expr, len(dfs)]
 
                 if len(best_mses) < 2:
@@ -116,7 +204,7 @@ class prop_mse_layer:
                     max_mse = max(best_mses)
 
                 if self.verbose:
-                    print(f"           {expr} has average mse {average_mse}")
+                    print(f"               {expr} has average mse {average_mse}")
 
             min_mse = min(best_mses)
             prop_sample = min_mse/max_mse
@@ -131,20 +219,30 @@ class prop_mse_layer:
 
         if len_best_expr == 2:
             self.symbols.append(self.lin_relns[best_expr][0])
-        # raise Exception
         return best_expr
 
     def run_single_iteration(self):
         return_status = self.find_exprs()
         if return_status == "Invalid":
             if self.verbose:
-                print("MSE layer: Proceeding with invalid return")
+                print("Ranking layer: Proceeding with invalid return")
             return None, None
 
+        if self.ranking_method == "bacon.3":
+            expr = self.rank_bacon_3()
+        elif self.ranking_method == "popularity":
+            expr = self.rank_popularity()
+
         self.construct_dfs()
-        expr = self.rank_exprs()
+
+        if self.ranking_method == "gp_ranking":
+            expr = self.rank_gp()
+        elif self.ranking_method == "min_mse":
+            expr = self.rank_min_mse()
+        elif self.ranking_method == "prop_mse":
+            expr = self.rank_propto_mse()
 
         if self.verbose:
-            print(f"MSE layer: Proceeding with {expr}")
+            print(f"Ranking layer: Proceeding with {expr}")
 
         return self.exprs_dict[expr], self.symbols
