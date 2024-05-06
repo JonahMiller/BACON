@@ -8,7 +8,6 @@ from space_of_laws.laws_manager import laws_main
 from space_of_data.layer_manager import layer_main
 
 from space_of_data.space_methods.data_space_manager import data_space
-from space_of_data.space_methods.mixture import mixture
 from space_of_data.space_methods.bacon5 import BACON_5
 from space_of_data.space_methods.mcts import main_mcts
 
@@ -23,8 +22,8 @@ def ParseArgs():
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to the dataset")
     parser.add_argument("--space_of_data", type=str,
-                        choices=["bacon.3", "bacon.5", "gp_ranking", "min_mse", "prop_mse",
-                                 "popularity", "mixture", "mcts"],
+                        choices=["bacon.3", "gp_ranking", "min_mse", "prop_mse",
+                                 "popularity", "bacon.5", "mcts"],
                         default=None, metavar="SD",
                         help="how to traverse the space of data")
     parser.add_argument("--space_of_laws", type=str,
@@ -62,11 +61,6 @@ def main():
         ds = BACON_5(initial_df,
                      laws_main(args.space_of_laws, laws_args),
                      **layer_args)
-        ds.run_iterations()
-    elif args.space_of_data == "mixture":
-        ds = mixture(initial_df,
-                     laws_main(args.space_of_laws, laws_args),
-                     **data_space_args)
         ds.run_iterations()
     elif args.space_of_data == "mcts":
         init_state = [init_symb[-1], len(init_symb)]
