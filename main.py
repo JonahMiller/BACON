@@ -4,6 +4,8 @@ import json
 import pandas as pd
 
 import data.datasets as data
+from utils.gp import gp
+
 from space_of_laws.laws_manager import laws_main
 from space_of_data.layer_manager import layer_main
 
@@ -32,6 +34,8 @@ def ParseArgs():
                         help="how to traverse the space of laws")
     parser.add_argument("--additional_args", type=str, metavar="f", default=None,
                         help="json file for args used in space of data setting")
+    parser.add_argument("--denoise", action="store_true",
+                        help="denoises dataset using a gaussian process")
     args = parser.parse_args()
     return args
 
@@ -42,6 +46,9 @@ def main():
     data_func = data.allowed_data()[args.dataset]
     init_data, init_symb = data_func(args.noise)
     initial_df = pd.DataFrame({v: d for v, d in zip(init_symb, init_data)})
+
+    if args.denoise:
+        initial_df = gp(initial_df).denoise()
 
     if len(init_symb) > 2 and not args.space_of_data:
         raise Exception("Can only run without data space method if 2 columns in dataframe")

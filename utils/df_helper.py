@@ -163,34 +163,6 @@ def average_df(df):
         return return_df
 
 
-# def linear_relns(df, dummy_sym, expr_sym):
-#     indecies = df.index.values
-
-#     print(average_df(df))
-
-#     data1 = df.iloc[:, -1].values.tolist()
-#     data2 = df.iloc[:, -2].values.tolist()
-#     n = len(data1)
-
-#     dummy_data, expr_data = [], []
-#     for idx in range(n):
-#         total_m, total_c = 0, 0
-#         dp1, dp2 = data1[idx], data2[idx]
-#         n_data1 = data1[:idx] + data1[idx + 1:]
-#         n_data2 = data2[:idx] + data2[idx + 1:]
-
-#         for d1, d2 in zip(n_data1, n_data2):
-#             m, c = np.polyfit((d1, dp1), (d2, dp2), 1)
-#             total_m += m
-#             total_c += c
-
-#         dummy_data.append(total_m/n)
-#         expr_data.append(total_c/n)
-
-#     return pd.DataFrame({dummy_sym: dummy_data}, index=indecies), \
-#         pd.DataFrame({expr_sym: expr_data}, index=indecies)
-
-
 def linear_relns(df, dummy_sym, expr_sym):
     indecies = df.index.values
 
@@ -203,25 +175,6 @@ def linear_relns(df, dummy_sym, expr_sym):
 
     return pd.DataFrame({dummy_sym: m}, index=indecies), \
         pd.DataFrame({expr_sym: c}, index=indecies)
-
-
-# def linear_relns(df, dummy_sym, expr_sym):
-#     indecies = df.index.values
-
-#     print(df)
-
-#     data1 = df.iloc[:, -1].values.tolist()
-#     data2 = df.iloc[:, -2].values.tolist()
-
-#     expr_data, dummy_data = [], []
-#     m, c = np.polyfit(data1, data2, 1)
-
-#     for d1, d2 in zip(data1, data2):
-#         dummy_data.append((d2 - c)/d1)
-#         expr_data.append(d2 - m*d1)
-
-#     return pd.DataFrame({dummy_sym: dummy_data}, index=indecies), \
-#         pd.DataFrame({expr_sym: expr_data}, index=indecies)
 
 
 def lin_reln_2_df(df, backup_df, dummy_sym, expr_sym):

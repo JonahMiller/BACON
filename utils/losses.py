@@ -6,10 +6,11 @@ from sklearn.metrics import mean_squared_error as mse
 
 
 class simplify_eqns:
-    def __init__(self, initial_df, eqns, key_var):
+    def __init__(self, initial_df, eqns, key_var, extra_vars=None):
         self.df = initial_df
         self.eqns = eqns
         self.key_var = key_var
+        self.extra_vars = extra_vars
 
     def get_dummy_vars(self):
         '''
@@ -20,8 +21,14 @@ class simplify_eqns:
         for eqn in self.eqns:
             for fs in eqn.free_symbols:
                 all_vars.add(fs)
-        self.dummy_vars = list(filterfalse(list(self.df.columns).__contains__,
-                                           list(all_vars)))
+
+        if self.extra_vars:
+            full_vars = list(self.df.columns) + self.extra_vars
+            self.dummy_vars = list(filterfalse(full_vars.__contains__,
+                                               list(all_vars)))
+        else:
+            self.dummy_vars = list(filterfalse(list(self.df.columns).__contains__,
+                                               list(all_vars)))
 
     def elim_dummy_var(self, dummy_var):
         '''

@@ -8,6 +8,7 @@ from collections import defaultdict
 from utils import df_helper
 from utils import losses as loss_helper
 from space_of_laws.laws_methods.bacon1 import BACON_1
+from space_of_laws.laws_methods.mcts_bacon6 import BACON_6
 from space_of_data.layer_methods.layer_select import layer
 
 
@@ -174,39 +175,46 @@ def move(var_list, action):
 
 def game_result(var_list, initial_df):
     dict_entry = df_dict[str(var_list)]
+    var = initial_df.columns.to_list()[-1]
     if "score" in dict_entry:
         return dict_entry["score"]
 
     eqns = dict_entry["final_eqns"]
-    for var in list(reversed(initial_df.columns)):
-        try:
-            eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
-                                                              eqns,
-                                                              var).iterate_through_dummys,
-                                    timeout_duration=1, default="fail")
-            if eqn == "fail":
-                # print("equations not combining")
-                df_dict[str(var_list)] = {"final_eqns": eqns, "score": -30000}
-                return -30000
 
-            print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)}")
+    try:
+        eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
+                                                          eqns,
+                                                          var).iterate_through_dummys,
+                                timeout_duration=1, default="fail")
+        print(eqn)
+        print(eqns)
+        eqn = df_helper.timeout(BACON_6(initial_df, eqns).run_iteration,
+                                timeout_duration=3, default="fail")
 
-            score = -loss_helper.loss_calc(initial_df, eqn).loss()
+        if eqn == "fail":
+            # print("equations not combining")
+            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -30000}
+            return -30000
 
-            if isinstance(score, complex):
-                # print("score is complex - likely solvable by hand")
-                df_dict[str(var_list)] = {"final_eqns": eqns, "score": -20000, "eqn_form": eqn}
-                return -20000
-            else:
-                num_var = len(eqn.free_symbols)
-                if num_var < len(initial_df.columns):
-                    score -= 2000*(len(initial_df.columns) - num_var)
-                df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn}
-                return score
+        print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)}")
 
-        except Exception:
-            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -1000000}
-            return -1000000
+        score = -loss_helper.loss_calc(initial_df, eqn).loss()
+
+        if isinstance(score, complex):
+            # print("score is complex - likely solvable by hand")
+            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -20000, "eqn_form": eqn}
+            return -20000
+        else:
+            num_var = len(eqn.free_symbols)
+            if num_var < len(initial_df.columns):
+                score -= 2000*(len(initial_df.columns) - num_var)
+            df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn}
+            return score
+
+    except Exception as e:
+        print(e)
+        df_dict[str(var_list)] = {"final_eqns": eqns, "score": -1000000}
+        return -1000000
 
 
 def main_mcts(initial_df, init_state):

@@ -5,7 +5,7 @@ import random
 from sklearn.metrics import mean_squared_error as mse
 
 from utils import df_helper as df_helper
-from utils.gp import ranking
+from utils.gp import gp
 
 
 class layer:
@@ -94,10 +94,10 @@ class layer:
         if len(self.exprs_dict) > 1:
             for expr, dfs in self.exprs_dict.items():
                 if len(dfs) == 2:
-                    s_n_ratio = min(ranking(dfs[0]).signal_noise_ratio(),
-                                    ranking(dfs[1]).signal_noise_ratio())
+                    s_n_ratio = min(gp(dfs[0]).signal_noise_ratio(),
+                                    gp(dfs[1]).signal_noise_ratio())
                 else:
-                    s_n_ratio = ranking(dfs[0]).signal_noise_ratio()
+                    s_n_ratio = gp(dfs[0]).signal_noise_ratio()
                 if s_n_ratio > best_ratio:
                     best_ratio = s_n_ratio
                     best_expr = expr
