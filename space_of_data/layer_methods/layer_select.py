@@ -1,5 +1,6 @@
 import pandas as pd
 from statistics import fmean
+from sympy.parsing.sympy_parser import parse_expr
 import random
 from sklearn.metrics import mean_squared_error as mse
 
@@ -8,7 +9,7 @@ from utils.gp import ranking
 
 
 class layer:
-    def __init__(self, df, laws_method, symbols, ranking_method, verbose=True):
+    def __init__(self, df, laws_method, symbols, ranking_method, verbose=False):
         self.df = df
         self.laws_method = laws_method
         self.symbols = symbols
@@ -18,6 +19,7 @@ class layer:
 
     def find_exprs(self):
         self.exprs_found = {}
+        self.exprs_idx = {}
         self.lin_relns = {}
         invalid_returns = 0
 
@@ -33,8 +35,11 @@ class layer:
             if symb:
                 if symb in self.exprs_found:
                     self.exprs_found[symb] += 1
+                    self.exprs_idx[symb].extend(list(df.index.values))
                 else:
                     self.exprs_found[symb] = 1
+                    self.exprs_idx[symb] = list(df.index.values)
+
                     if isinstance(lin, list):
                         self.lin_relns[symb] = [lin[1], lin[2], lin[4], lin[5]]
             else:
@@ -42,6 +47,7 @@ class layer:
 
         if self.verbose:
             print(f"Ranking layer: Expressions found are {self.exprs_found}")
+            # print(f"Indexes for expression are {self.exprs_idx}")
 
         if invalid_returns == len(s_dfs):
             return "Invalid"
@@ -140,15 +146,91 @@ class layer:
     @staticmethod
     def calc_mse(df):
         average_mse = 0
-        n = len(df.iloc[:, -2].unique())
-        rows = len(df.index)
-        for i in range(int(rows/n)):
-            col = df.iloc[i*n: (i+1)*n, -1]
+        s_dfs = df_helper.deconstruct_df(df)
+        for sdf in s_dfs:
+            col = df_helper.average_df(sdf).iloc[:, -1]
             max_col = max(col)
             new_col = (1/max_col) * col
             mse_score = mse(new_col, len(new_col)*[fmean(new_col)])
             average_mse += mse_score
         return average_mse
+
+    @staticmethod
+    def count_satisfy(df):
+        satisfy = 0
+        s_dfs = df_helper.deconstruct_df(df)
+        for sdf in s_dfs:
+            ndf = df_helper.average_df(sdf)
+            col = ndf.iloc[:, -1]
+            min_col = min(col)
+            if min_col < 0:
+                col += min_col
+
+            M = fmean(col)
+            if all(M*(0.8) < val < M*(1.2) for val in col):
+                satisfy += 1
+
+        return satisfy
+
+    def rank_satisfy(self):
+        best_satisfy = 0
+        len_best_expr = 1
+
+        if len(self.exprs_dict) > 1:
+            if self.verbose:
+                print("Ranking layer: Iteratively ranking the found expressions:")
+
+            for expr, dfs in self.exprs_dict.items():
+                if len(dfs) == 2:
+                    satisfy = max(layer.count_satisfy(dfs[0]),
+                                  layer.count_satisfy(dfs[1]))
+                else:
+                    satisfy = layer.count_satisfy(dfs[0])
+                if satisfy > best_satisfy:
+                    best_satisfy = satisfy
+                    best_expr = expr
+                    len_best_expr = len(dfs)
+                if self.verbose:
+                    print(f"               {expr} has equality in {satisfy}")
+        else:
+            best_expr = list(self.exprs_dict.keys())[0]
+            len_best_expr = len(self.exprs_dict[best_expr])
+
+        if len_best_expr == 2:
+            self.symbols.append(self.lin_relns[best_expr][0])
+        return best_expr
+
+    def user_input(self):
+        best_ave_mse = 1e100
+        len_best_expr = 1
+
+        if len(self.exprs_dict) > 1:
+            if self.verbose:
+                print("Ranking layer: Iteratively ranking the found expressions:")
+
+            for expr, dfs in self.exprs_dict.items():
+                if len(dfs) == 2:
+                    average_mse = min(layer.calc_mse(dfs[0]),
+                                      layer.calc_mse(dfs[1]))
+                else:
+                    average_mse = layer.calc_mse(dfs[0])
+                if average_mse < best_ave_mse:
+                    best_ave_mse = average_mse
+                    best_expr = expr
+                    len_best_expr = len(dfs)
+                if self.verbose:
+                    print(f"               {expr} has average mse {average_mse}")
+
+            expr = str(input(f"Select expression from {list(self.exprs_dict.keys())}:" + '\n'))
+            best_expr = parse_expr(expr)
+            len_best_expr = len(self.exprs_dict[best_expr])
+        else:
+            best_expr = list(self.exprs_dict.keys())[0]
+            len_best_expr = len(self.exprs_dict[best_expr])
+
+        if len_best_expr == 2:
+            self.symbols.append(self.lin_relns[best_expr][0])
+        return best_expr
 
     def rank_min_mse(self):
         best_ave_mse = 1e100
@@ -170,6 +252,22 @@ class layer:
                     len_best_expr = len(dfs)
                 if self.verbose:
                     print(f"               {expr} has average mse {average_mse}")
+        else:
+            best_expr = list(self.exprs_dict.keys())[0]
+            len_best_expr = len(self.exprs_dict[best_expr])
+
+        if len_best_expr == 2:
+            self.symbols.append(self.lin_relns[best_expr][0])
+        return best_expr
+
+    def random_choice(self):
+        if len(self.exprs_dict) > 1:
+            if self.verbose:
+                print("Ranking layer: Iteratively ranking the found expressions:")
+
+            best_expr, dfs = random.choice(list(self.exprs_dict.items()))
+            len_best_expr = len(dfs)
+
         else:
             best_expr = list(self.exprs_dict.keys())[0]
             len_best_expr = len(self.exprs_dict[best_expr])
@@ -241,6 +339,12 @@ class layer:
             expr = self.rank_min_mse()
         elif self.ranking_method == "prop_mse":
             expr = self.rank_propto_mse()
+        elif self.ranking_method == "satisfy_equality":
+            expr = self.rank_satisfy()
+        elif self.ranking_method == "random":
+            expr = self.random_choice()
+        elif self.ranking_method == "user_input":
+            expr = self.user_input()
 
         if self.verbose:
             print(f"Ranking layer: Proceeding with {expr}")

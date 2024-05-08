@@ -22,8 +22,8 @@ def ParseArgs():
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to the dataset")
     parser.add_argument("--space_of_data", type=str,
-                        choices=["bacon.3", "gp_ranking", "min_mse", "prop_mse",
-                                 "popularity", "bacon.5", "mcts"],
+                        choices=["bacon.3", "gp_ranking", "min_mse", "prop_mse", "satisfy_equality",
+                                 "user_input", "popularity", "bacon.5", "mcts"],
                         default=None, metavar="SD",
                         help="how to traverse the space of data")
     parser.add_argument("--space_of_laws", type=str,

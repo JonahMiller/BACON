@@ -53,7 +53,7 @@ class BACON_1:
             if self.verbose:
                 print("BACON 1: No relation found within acceptable parameters.")
                 print("         Rerunning with increased epsilon and delta params.")
-            new_eps = 1.3*self.epsilon
+            new_eps = 1.1*self.epsilon
             new_delta = 1.05*self.delta
             return BACON_1(self.initial_df, self.all_found_symbols,
                            new_eps, new_delta, self.verbose).bacon_iterations()
@@ -72,7 +72,7 @@ class BACON_1:
         self.check_constant(b_, abs(b))
 
         if self.update != "constant":
-            if 1 - abs(r) < self.epsilon and abs(c) > 0.001:
+            if 1 - abs(r) < self.epsilon and abs(c) > 0.00001:
                 self.linear(a_, b_, a, b)
 
             elif r > 0:

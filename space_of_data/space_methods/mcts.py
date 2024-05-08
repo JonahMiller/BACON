@@ -103,9 +103,9 @@ class MonteCarloTreeSearchNode():
         return current_node
 
     def best_action(self):
-        simulation_no = 50
+        simulation_no = 500
         for idx in range(simulation_no):
-            if idx % 5 == 0:
+            if idx % 50 == 0:
                 print(f"SIMULATION NUMBER {idx}")
             v = self._tree_policy()
             reward = v.rollout()
@@ -124,7 +124,6 @@ def get_legal_actions(var_list):
 def is_game_over(var_list):
     if "dfs" in df_dict[str(var_list)]:
         return False
-    print("game is over!")
     return True
 
 
@@ -143,7 +142,7 @@ def move(var_list, action):
             layer_in_context = layer(df, lambda df, col_1, col_2, afs:
                                      bacon_1(df, col_1, col_2, afs,
                                              epsilon=action[0], delta=action[1]),
-                                     symbols, "prop_mse")
+                                     symbols, "random")
             new_df, symbols = layer_in_context.run_single_iteration()
             new_dfs.extend(new_df)
 
@@ -173,33 +172,12 @@ def move(var_list, action):
         return var_list
 
 
-def score_func(score, num_dummy, num_var, actual_var):
-    reward = 0
-
-    if num_var < actual_var:
-        reward -= min(0.1*(actual_var - num_var), 0.4)
-    if num_dummy > 2:
-        reward -= min(0.2*(num_dummy - 2), 0.5)
-
-    if score < 0.1:
-        reward = 1
-    elif score < 1:
-        reward += 0.8
-    elif score < 5:
-        reward += 0.6
-    elif score < 10:
-        reward += 0.4
-    return reward
-
-
 def game_result(var_list, initial_df):
     dict_entry = df_dict[str(var_list)]
     if "score" in dict_entry:
         return dict_entry["score"]
 
     eqns = dict_entry["final_eqns"]
-    num_dummy = len(eqns) - 1
-    print(eqns)
     for var in list(reversed(initial_df.columns)):
         try:
             eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
@@ -208,24 +186,27 @@ def game_result(var_list, initial_df):
                                     timeout_duration=1, default="fail")
             if eqn == "fail":
                 # print("equations not combining")
-                df_dict[str(var_list)] = {"final_eqns": eqns, "score": -0.75}
-                return -0.75
+                df_dict[str(var_list)] = {"final_eqns": eqns, "score": -30000}
+                return -30000
 
-            score = loss_helper.loss_calc(initial_df, eqn).loss()
+            print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)}")
+
+            score = -loss_helper.loss_calc(initial_df, eqn).loss()
 
             if isinstance(score, complex):
                 # print("score is complex - likely solvable by hand")
-                df_dict[str(var_list)] = {"final_eqns": eqns, "score": -0.5, "eqn_form": eqn}
-                return -0.5
+                df_dict[str(var_list)] = {"final_eqns": eqns, "score": -20000, "eqn_form": eqn}
+                return -20000
             else:
                 num_var = len(eqn.free_symbols)
-                final_score = score_func(score, num_dummy, num_var, len(initial_df.columns))
-                df_dict[str(var_list)] = {"final_eqns": eqns, "score": final_score, "eqn_form": eqn}
-                return final_score
+                if num_var < len(initial_df.columns):
+                    score -= 2000*(len(initial_df.columns) - num_var)
+                df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn}
+                return score
 
         except Exception:
-            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -1}
-            return -1
+            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -1000000}
+            return -1000000
 
 
 def main_mcts(initial_df, init_state):
@@ -240,4 +221,5 @@ def main_mcts(initial_df, init_state):
         df_dict = {str(init_state): dict_state}
     print(f"FINAL NODE STATE IS {init_state}")
     eqn = df_dict[str(init_state)]['eqn_form']
-    print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)}")
+    final_score = df_dict[str(init_state)]['score']
+    print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with score {final_score}")

@@ -23,7 +23,7 @@ def ideal(noise=0):
     P = np.array(3*(3*([10, 20, 30])))
     V = (a*M*T + b*M)/P
     if noise:
-        V += np.random.normal(0, noise*abs(V), 27)
+        V += np.random.normal(0, noise*abs(V))
     return [M, T, P, V], [Symbol("M"), Symbol("T"), Symbol("P"), Symbol("V")]
 
 
@@ -35,20 +35,20 @@ def ohm(noise=0):
     L = np.array(3*(3*([5, 10, 15])))
     I = np.array(T*D**2/(v*(L + r)))  # noqa
     if noise:
-        I += np.random.normal(0, noise*abs(I), 27)
+        I += np.random.normal(0, noise*abs(I))
     return [T, D, L, I], [Symbol("T"), Symbol("D"), Symbol("L"), Symbol("I")]
 
 
 def black(noise=0):
-    c_1 = 4
-    c_2 = 2
+    c_1 = 1
+    c_2 = 1
     M_1 = np.array(27*[1] + 27*[2] + 27*[3])
     M_2 = np.array(3*(9*[1] + 9*[2] + 9*[3]))
     T_1 = np.array(9*(3*[50] + 3*[60] + 3*[70]))
     T_2 = np.array(27*([50, 60, 70]))
     T_f = np.array((c_1*M_1*T_1 + c_2*M_2*T_2)/(c_1*M_1 + c_2*M_2))
     if noise:
-        T_f += np.random.normal(0, noise*abs(T_f), 81)
+        T_f += np.random.normal(0, noise*abs(T_f))
     return [M_1, M_2, T_1, T_2, T_f], \
            [Symbol("M_1"), Symbol("M_2"), Symbol("T_1"), Symbol("T_2"), Symbol("T_f")]
 
@@ -62,7 +62,7 @@ def large(noise=0):
     F = np.array(243*([11, 19, 27]))
     G = 50*A**2*B*(1 + 30*C)/(D*E_2*(F + 2))
     if noise:
-        G += np.random.normal(0, noise*abs(G), 729)
+        G += np.random.normal(0, noise*abs(G))
     return [A, B, C, D, E_2, F, G], \
            [Symbol("A"), Symbol("B"), Symbol("C"), Symbol("D"),
             Symbol("E_2"), Symbol("F"), Symbol("G")]
@@ -73,7 +73,7 @@ def kepler(noise=0):
     P = np.power(n, 3)
     D = np.power(n, 2)
     if noise:
-        D += np.random.normal(0, noise*abs(D), 10)
+        D += np.random.normal(0, noise*abs(D))
     return [P, D], [Symbol("P"), Symbol("D")]
 
 
@@ -95,7 +95,7 @@ def birthday(noise=0):
     N = np.array([i for i in range(2, 10)])
     Q = np.vectorize(Q_func)(N)
     if noise:
-        Q += np.random.normal(0, noise*abs(Q), 8)
+        Q += np.random.normal(0, noise*abs(Q))
     return [N, N*Q], [Symbol("N"), Symbol("N")*Symbol("Q")]
 
 
@@ -117,7 +117,7 @@ def lotka_volterra(noise=0):
     X = [X[idx] for idx in range(len(X)) if idx % 100 == 0]
     Y = [Y[idx] for idx in range(len(Y)) if idx % 100 == 0]
     if noise:
-        Y += np.random.normal(0, noise*abs(Y), 10)
+        Y += np.random.normal(0, noise*abs(Y))
     return [X, Y], [Symbol("X"), Symbol("Y")]
 
 
