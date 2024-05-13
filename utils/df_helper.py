@@ -8,29 +8,37 @@ import utils.losses as loss_helper
 
 def new_eqn(mini_expr, temp_val, full_expr):
     """
-    Messy solution to detect equivalent expressions using Sympy.
+    Disgusting solution to detect equivalent expressions using Sympy.
     """
     new_expr = full_expr.subs(mini_expr,
                               temp_val).subs(1/mini_expr,
-                                             1/temp_val)
+                                             1/temp_val).subs(mini_expr**2,
+                                                              temp_val**2).subs(1/mini_expr**2,
+                                                                                1/temp_val**2)
     if temp_val in new_expr.free_symbols:
         return new_expr
     else:
         new_expr = simplify(full_expr).subs(mini_expr,
                                             temp_val).subs(1/mini_expr,
-                                                           1/temp_val)
+                                                           1/temp_val).subs(mini_expr**2,
+                                                                            temp_val**2).subs(1/mini_expr**2,
+                                                                                              1/temp_val**2)
         if temp_val in new_expr.free_symbols:
             return new_expr
         else:
             new_expr = full_expr.subs(simplify(mini_expr),
                                       temp_val).subs(1/simplify(mini_expr),
-                                                     1/temp_val)
+                                                     1/temp_val).subs(simplify(mini_expr**2),
+                                                                      temp_val**2).subs(1/simplify(mini_expr**2),
+                                                                                        1/temp_val**2)
             if temp_val in new_expr.free_symbols:
                 return new_expr
             else:
                 new_expr = simplify(full_expr).subs(simplify(mini_expr),
                                                     temp_val).subs(1/simplify(mini_expr),
-                                                                   1/temp_val)
+                                                                   1/temp_val).subs(simplify(mini_expr**2),
+                                                                                    temp_val**2).subs(1/simplify(mini_expr**2),  # noqa
+                                                                                                      1/temp_val**2)
                 if temp_val in new_expr.free_symbols:
                     return new_expr
                 else:

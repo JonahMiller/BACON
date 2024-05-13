@@ -87,8 +87,8 @@ class MonteCarloTreeSearchNode():
     def is_fully_expanded(self):
         return len(self._untried_actions) == 0
 
-    def best_child(self, c_param=1):
-        choices_weights = [(c.q() / c.n()) + c_param * np.sqrt((2 * np.log(self.n()) / c.n())) for c in self.children]
+    def best_child(self, c_param=4):
+        choices_weights = [(c.q() / c.n()) + c_param * np.sqrt(np.log(self.n()) / c.n()) for c in self.children]
         return self.children[np.argmax(choices_weights)]
 
     def rollout_policy(self, possible_moves):
@@ -104,9 +104,9 @@ class MonteCarloTreeSearchNode():
         return current_node
 
     def best_action(self):
-        simulation_no = 500
+        simulation_no = 100
         for idx in range(simulation_no):
-            if idx % 50 == 0:
+            if idx % 10 == 0:
                 print(f"SIMULATION NUMBER {idx}")
             v = self._tree_policy()
             reward = v.rollout()
@@ -116,8 +116,10 @@ class MonteCarloTreeSearchNode():
 
 
 def get_legal_actions(var_list):
-    epsilon = [0.0001, 0.001]
-    delta = [0.04, 0.08]
+    epsilon = [0.0001]
+    delta = [0.08]
+    # epsilon = [0.0001, 0.001]
+    # delta = [0.04, 0.08]
     actions = list(product(epsilon, delta))
     return actions
 
@@ -143,7 +145,7 @@ def move(var_list, action):
             layer_in_context = layer(df, lambda df, col_1, col_2, afs:
                                      bacon_1(df, col_1, col_2, afs,
                                              epsilon=action[0], delta=action[1]),
-                                     symbols, "random")
+                                     symbols, "user_input")
             new_df, symbols = layer_in_context.run_single_iteration()
             new_dfs.extend(new_df)
 
@@ -180,16 +182,24 @@ def game_result(var_list, initial_df):
         return dict_entry["score"]
 
     eqns = dict_entry["final_eqns"]
+    print("STTTTTTTTTTTTTTTTTTTTTTTTTTTAQRT")
+    print(eqns)
 
     try:
-        eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
-                                                          eqns,
-                                                          var).iterate_through_dummys,
-                                timeout_duration=1, default="fail")
+        if len(eqns) > 0:
+            # eqn = df_helper.timeout(BACON_6(initial_df, eqns).run_iteration,
+            #                         timeout_duration=3, default="fail")
+            eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
+                                                            eqns,
+                                                            var).iterate_through_dummys,
+                                    timeout_duration=3, default="fail")
+        else:
+            eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
+                                                            eqns,
+                                                            var).iterate_through_dummys,
+                                    timeout_duration=3, default="fail")
         print(eqn)
-        print(eqns)
-        eqn = df_helper.timeout(BACON_6(initial_df, eqns).run_iteration,
-                                timeout_duration=3, default="fail")
+        print("ENDDDDDDDDDDDDDDDDDDDDNDND")
 
         if eqn == "fail":
             # print("equations not combining")
@@ -210,11 +220,9 @@ def game_result(var_list, initial_df):
                 score -= 2000*(len(initial_df.columns) - num_var)
             df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn}
             return score
-
-    except Exception as e:
-        print(e)
-        df_dict[str(var_list)] = {"final_eqns": eqns, "score": -1000000}
-        return -1000000
+    except Exception:
+        df_dict[str(var_list)] = {"final_eqns": eqns, "score": -100000, "eqn_form": eqn}
+        return -100000        
 
 
 def main_mcts(initial_df, init_state):

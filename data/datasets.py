@@ -7,24 +7,15 @@ from scipy import integrate
 np.random.seed(2)
 
 
-def basic(noise=0):
-    M = np.array(9*[1] + 9*[2] + 9*[3])
-    T = np.array(3*(3*[10] + 3*[20] + 3*[30]))
-    P = np.array(3*(3*([10, 20, 30])))
-    V = 3*M*T/P + noise*np.random.normal(0, 1, 27)
-    return [M, T, P, V], [Symbol("M"), Symbol("T"), Symbol("P"), Symbol("V")]
-
-
 def ideal(noise=0):
-    a = 2
-    b = 3
     M = np.array(9*[1] + 9*[2] + 9*[3])
     T = np.array(3*(3*[10] + 3*[20] + 3*[30]))
-    P = np.array(3*(3*([10, 20, 30])))
-    V = (a*M*T + b*M)/P
+    P = np.array(3*(3*([1000, 2000, 3000])))
+    V = M*(T + 273)/P
     if noise:
         V += np.random.normal(0, noise*abs(V))
-    return [M, T, P, V], [Symbol("M"), Symbol("T"), Symbol("P"), Symbol("V")]
+    return [M, T, P, V], [Symbol("M", real=True), Symbol("T", real=True),
+                          Symbol("P", real=True), Symbol("V", real=True)]
 
 
 def ohm(noise=0):
@@ -36,7 +27,8 @@ def ohm(noise=0):
     I = np.array(T*D**2/(v*(L + r)))  # noqa
     if noise:
         I += np.random.normal(0, noise*abs(I))
-    return [T, D, L, I], [Symbol("T"), Symbol("D"), Symbol("L"), Symbol("I")]
+    return [T, D, L, I], [Symbol("T", real=True), Symbol("D", real=True),
+                          Symbol("L", real=True), Symbol("I", real=True)]
 
 
 def black(noise=0):
@@ -50,22 +42,9 @@ def black(noise=0):
     if noise:
         T_f += np.random.normal(0, noise*abs(T_f))
     return [M_1, M_2, T_1, T_2, T_f], \
-           [Symbol("M_1"), Symbol("M_2"), Symbol("T_1"), Symbol("T_2"), Symbol("T_f")]
-
-
-def large(noise=0):
-    A = np.array(243*[1] + 243*[2] + 243*[3])
-    B = np.array(3*(81*[4] + 81*[7] + 81*[11]))
-    C = np.array(9*(27*[0.4] + 27*[0.5] + 27*[0.6]))
-    D = np.array(27*(9*[10] + 9*[11] + 9*[12]))
-    E_2 = np.array(81*(3*[1] + 3*[3] + 3*[4]))
-    F = np.array(243*([11, 19, 27]))
-    G = 50*A**2*B*(1 + 30*C)/(D*E_2*(F + 2))
-    if noise:
-        G += np.random.normal(0, noise*abs(G))
-    return [A, B, C, D, E_2, F, G], \
-           [Symbol("A"), Symbol("B"), Symbol("C"), Symbol("D"),
-            Symbol("E_2"), Symbol("F"), Symbol("G")]
+           [Symbol("M_1", real=True), Symbol("M_2", real=True),
+            Symbol("T_1", real=True), Symbol("T_2", real=True),
+            Symbol("T_f", real=True)]
 
 
 def kepler(noise=0):
@@ -75,13 +54,6 @@ def kepler(noise=0):
     if noise:
         D += np.random.normal(0, noise*abs(D))
     return [P, D], [Symbol("P"), Symbol("D")]
-
-
-def boyle(noise=0):
-    V = np.array([1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 24, 28, 32])
-    P = np.array([29.750, 19.125, 14.375, 9.5, 7.125, 5.625, 4.875, 4.25, 3.75,
-                  3.375, 3, 2.625, 2.25, 2, 1.875, 1.75, 1.5, 1.375, 1.25])
-    return [P, V], [Symbol("P"), Symbol("V")]
 
 
 def birthday(noise=0):
@@ -123,14 +95,11 @@ def lotka_volterra(noise=0):
 
 def allowed_data():
     data = {
-            "basic": basic,
             "ohm": ohm,
             "ideal": ideal,
             "black": black,
             "kepler": kepler,
-            "boyle": boyle,
             "birthday": birthday,
             "lv": lotka_volterra,
-            "large": large
            }
     return data

@@ -24,7 +24,6 @@ class BACON_6:
         self.verbose = verbose
 
         self.parse_expression(eqns)
-        print(self.expr)
 
     def parse_expression(self, eqns):
         new_eqns = []
@@ -57,7 +56,7 @@ class BACON_6:
         self.best = []
         state_dict = {}
         self.min = 0
-        for idx, vars in enumerate(self.states):
+        for vars in self.states:
             try:
                 eta_ = self.expr.subs(dict(zip(self.unknowns, vars)))
                 fs = list(eta_.free_symbols)
@@ -75,14 +74,14 @@ class BACON_6:
 
                     if r not in state_dict:
                         state_dict[r] = np.array(list(vars))
-                        self.sort_threshold(idx, r)
+                        self.sort_threshold(r)
             except KeyError:
                 continue
         self.states = [state_dict[r] for r in self.best]
         self.step = self.step/2
 
-    def sort_threshold(self, idx, r):
-        if idx < self.N_threshold:
+    def sort_threshold(self, r):
+        if len(self.best) < 2:
             self.best.append((r))
             self.min = min(self.best)
         else:

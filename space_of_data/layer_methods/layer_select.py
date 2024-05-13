@@ -1,6 +1,5 @@
 import pandas as pd
 from statistics import fmean
-from sympy.parsing.sympy_parser import parse_expr
 import random
 from sklearn.metrics import mean_squared_error as mse
 
@@ -9,7 +8,7 @@ from utils.gp import gp
 
 
 class layer:
-    def __init__(self, df, laws_method, symbols, ranking_method, verbose=False):
+    def __init__(self, df, laws_method, symbols, ranking_method, verbose=True):
         self.df = df
         self.laws_method = laws_method
         self.symbols = symbols
@@ -220,9 +219,9 @@ class layer:
                     len_best_expr = len(dfs)
                 if self.verbose:
                     print(f"               {expr} has average mse {average_mse}")
-
-            expr = str(input(f"Select expression from {list(self.exprs_dict.keys())}:" + '\n'))
-            best_expr = parse_expr(expr)
+            keys = list(self.exprs_dict.keys())
+            idx = int(input(f"Select expression index from {list(zip(keys, range(0, len(keys))))}:" + '\n'))
+            best_expr = list(self.exprs_dict)[idx]
             len_best_expr = len(self.exprs_dict[best_expr])
         else:
             best_expr = list(self.exprs_dict.keys())[0]
