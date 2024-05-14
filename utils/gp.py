@@ -24,10 +24,10 @@ class gp:
         m.constrain_positive('')  # '' is a regex matching all parameter names
         m.optimize()
 
-        if m[0]/m[3] > 1e100:
+        if m[0]/m[2] > 1e100:
             return 1e100
         else:
-            return m[0]/m[3]
+            return m[0]/m[2]
 
     def denoise(self):
         X, y = self.sort_df()

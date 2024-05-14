@@ -156,6 +156,23 @@ def deconstruct_df(df):
     return smallest_dfs
 
 
+def deconstruct_deconstructed_df(df):
+    """
+    Gets dataframe that shares all the same values in the
+    penultimate column of a deconstructed df.
+    """
+    if len(df.index) == 3:
+        return df
+    else:
+        col_0 = df.columns[-2]
+        unique_vals = df[col_0].unique()
+        small_dfs = []
+        for val in unique_vals:
+            mini_df = df.loc[df[col_0] == val]
+            small_dfs.append(mini_df)
+        return small_dfs
+
+
 def average_df(df):
     if len(df.index) == 3:
         return df
@@ -174,15 +191,32 @@ def average_df(df):
 def linear_relns(df, dummy_sym, expr_sym):
     indecies = df.index.values
 
-    ave_df = average_df(df)
+    data1 = df.iloc[:, -1].values.tolist()
+    data2 = df.iloc[:, -2].values.tolist()
 
-    data1 = ave_df.iloc[:, -1].values.tolist()
-    data2 = ave_df.iloc[:, -2].values.tolist()
-
+    expr_data, dummy_data = [], []
     m, c = np.polyfit(data2, data1, 1)
 
-    return pd.DataFrame({dummy_sym: m}, index=indecies), \
-        pd.DataFrame({expr_sym: c}, index=indecies)
+    for d1, d2 in zip(data1, data2):
+        dummy_data.append((d1 - c)/d2)
+        expr_data.append(d1 - m*d2)
+
+    return pd.DataFrame({dummy_sym: dummy_data}, index=indecies), \
+        pd.DataFrame({expr_sym: expr_data}, index=indecies)
+
+
+# def linear_relns(df, dummy_sym, expr_sym):
+#     indecies = df.index.values
+
+#     ave_df = average_df(df)
+
+#     data1 = ave_df.iloc[:, -1].values.tolist()
+#     data2 = ave_df.iloc[:, -2].values.tolist()
+
+#     m, c = np.polyfit(data2, data1, 1)
+
+#     return pd.DataFrame({dummy_sym: m}, index=indecies), \
+#         pd.DataFrame({expr_sym: c}, index=indecies)
 
 
 def lin_reln_2_df(df, backup_df, dummy_sym, expr_sym):

@@ -112,18 +112,24 @@ class layer:
         return best_expr
 
     def rank_popularity(self):
-        best_expr = max(self.exprs_found, key=self.exprs_found.get)
+        # best_expr = max(self.exprs_found, key=self.exprs_found.get)
+        most_pop_count = max(self.exprs_found.values())
+        self.exprs_found = {k: v for k, v in self.exprs_found.items() if v == most_pop_count}
 
-        if best_expr in self.lin_relns:
-            lin_reln = self.lin_relns[best_expr]
+        if len(self.exprs_found) == 1:
+            best_expr = list(self.exprs_found.keys())[0]
+
+            if best_expr in self.lin_relns:
+                lin_reln = self.lin_relns[best_expr]
+            else:
+                lin_reln = None
+
+            if lin_reln:
+                self.symbols.append(self.lin_relns[best_expr][0])
+            return best_expr
+
         else:
-            lin_reln = None
-
-        if lin_reln:
-            self.symbols.append(self.lin_relns[best_expr][0])
-
-        self.exprs_found = {best_expr: self.exprs_found[best_expr]}
-        return best_expr
+            self.ranking_method = "min_mse"
 
     def rank_bacon_3(self):
         if len(self.exprs_found) != 1:
@@ -147,11 +153,13 @@ class layer:
         average_mse = 0
         s_dfs = df_helper.deconstruct_df(df)
         for sdf in s_dfs:
-            col = df_helper.average_df(sdf).iloc[:, -1]
-            max_col = max(col)
-            new_col = (1/max_col) * col
-            mse_score = mse(new_col, len(new_col)*[fmean(new_col)])
-            average_mse += mse_score
+            s_df2 = df_helper.deconstruct_deconstructed_df(sdf)
+            for sdf2 in s_df2:
+                col = sdf2.iloc[:, -1]
+                max_col = max(col)
+                new_col = (1/max_col) * col
+                mse_score = mse(new_col, len(new_col)*[fmean(new_col)])
+                average_mse += mse_score
         return average_mse
 
     @staticmethod
@@ -159,15 +167,16 @@ class layer:
         satisfy = 0
         s_dfs = df_helper.deconstruct_df(df)
         for sdf in s_dfs:
-            ndf = df_helper.average_df(sdf)
-            col = ndf.iloc[:, -1]
-            min_col = min(col)
-            if min_col < 0:
-                col += min_col
+            s_df2 = df_helper.deconstruct_deconstructed_df(sdf)
+            for sdf2 in s_df2:
+                col = sdf2.iloc[:, -1]
+                min_col = min(col)
+                if min_col < 0:
+                    col += min_col
 
-            M = fmean(col)
-            if all(M*(0.8) < val < M*(1.2) for val in col):
-                satisfy += 1
+                M = fmean(col)
+                if all(M*(0.97) < val < M*(1.03) for val in col):
+                    satisfy += 1
 
         return satisfy
 

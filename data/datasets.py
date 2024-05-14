@@ -20,11 +20,11 @@ def ideal(noise=0):
 
 def ohm(noise=0):
     v = 2
-    r = 3
+    r = -3
     T = np.array(9*[100] + 9*[120] + 9*[140])
-    D = np.array(3*(3*[1] + 3*[2] + 3*[3]))
-    L = np.array(3*(3*([5, 10, 15])))
-    I = np.array(T*D**2/(v*(L + r)))  # noqa
+    D = np.array(3*(3*[0.01] + 3*[0.02] + 3*[0.03]))
+    L = np.array(3*(3*([0.5, 1, 1.5])))
+    I = np.array(T*D**2/(v*(L - r)))  # noqa
     if noise:
         I += np.random.normal(0, noise*abs(I))
     return [T, D, L, I], [Symbol("T", real=True), Symbol("D", real=True),
