@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 import time
+from sklearn.metrics import mean_squared_error as mse
 
 import sys
 sys.path.append("..")
@@ -28,6 +29,7 @@ def run_pysr(data, variables):
 
     model.fit(X, y)
     print(f"{variables[-1]} = {model.sympy()}")
+    print(f"MSE difference {mse(model.predict(X), y)}")
 
 
 def ParseArgs():

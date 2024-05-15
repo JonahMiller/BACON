@@ -23,14 +23,12 @@ def ParseArgs():
                         help="which dataset would you like to analyse")
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to the dataset")
-    parser.add_argument("--space_of_data", type=str,
+    parser.add_argument("--space_of_data", type=str, default=None, metavar="SD",
                         choices=["bacon.3", "gp_ranking", "min_mse", "prop_mse", "satisfy_equality",
                                  "user_input", "popularity", "bacon.5", "mcts"],
-                        default=None, metavar="SD",
                         help="how to traverse the space of data")
-    parser.add_argument("--space_of_laws", type=str,
+    parser.add_argument("--space_of_laws", type=str, default="bacon.1", metavar="SL",
                         choices=["bacon.1", "bacon.6", "pysr"],
-                        default="bacon.1", metavar="SL",
                         help="how to traverse the space of laws")
     parser.add_argument("--additional_args", type=str, metavar="f", default=None,
                         help="json file for args used in space of data setting")
@@ -50,32 +48,36 @@ def main():
     if args.denoise:
         initial_df = gp(initial_df).denoise()
 
-    if len(init_symb) > 2 and not args.space_of_data:
-        raise Exception("Can only run without data space method if 2 columns in dataframe")
-
     if args.additional_args:
         with open(args.additional_args, "r") as j:
             all_args = json.loads(j.read())
             layer_args = all_args["layer_args"]
             laws_args = all_args["laws_args"]
             data_space_args = all_args["data_space_args"]
+            layer_method = all_args["layer_method"]
+            laws_method = all_args["laws_method"]
     else:
         layer_args = {}
         laws_args = {}
         data_space_args = {}
+        layer_method = args.space_of_data
+        laws_method = args.space_of_laws
 
-    if args.space_of_data == "bacon.5":
+    if len(init_symb) > 2 and not layer_method:
+        raise Exception("Can only run without data space method if 2 columns in dataframe")
+
+    if layer_method == "bacon.5":
         ds = BACON_5(initial_df,
-                     laws_main(args.space_of_laws, laws_args),
+                     laws_main(laws_method, laws_args),
                      **layer_args)
         ds.run_iterations()
-    elif args.space_of_data == "mcts":
+    elif layer_method == "mcts":
         init_state = [init_symb[-1], len(init_symb)]
         main_mcts(initial_df, init_state)
     else:
         ds = data_space(initial_df,
-                        layer_main(args.space_of_data, layer_args),
-                        laws_main(args.space_of_laws, laws_args),
+                        layer_main(layer_method, layer_args),
+                        laws_main(laws_method, laws_args),
                         **data_space_args)
         ds.run_iterations()
 

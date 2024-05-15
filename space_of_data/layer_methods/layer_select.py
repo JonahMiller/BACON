@@ -285,9 +285,8 @@ class layer:
         return best_expr
 
     def rank_propto_mse(self):
-        best_mses = []
         mse_dict = {}
-        len_best_expr = 1
+        weightings = []
 
         if len(self.exprs_dict) > 1:
             if self.verbose:
@@ -301,24 +300,25 @@ class layer:
                     average_mse = layer.calc_mse(dfs[0])
                 mse_dict[average_mse] = [expr, len(dfs)]
 
-                if len(best_mses) < 2:
-                    best_mses.append(average_mse)
-                    max_mse = max(best_mses)
-                elif average_mse < max_mse:
-                    best_mses.append(average_mse)
-                    best_mses.remove(max_mse)
-                    max_mse = max(best_mses)
-
                 if self.verbose:
                     print(f"               {expr} has average mse {average_mse}")
 
-            min_mse = min(best_mses)
-            prop_sample = min_mse/max_mse
+            found_mses = list(mse_dict.keys())
 
-            if random.random() < prop_sample:
-                best_expr, len_best_expr = mse_dict[max_mse]
+            if len(found_mses) > 1:
+                mse_sum = sum(found_mses)
+
+                for m in found_mses:
+                    weightings.append(1 - m/mse_sum)
+
+                weight_sum = sum(weightings)
+                norm_weight = [100*float(w)/weight_sum for w in weightings]
+                m = random.choices(found_mses, weights=norm_weight, k=1)[0]
+
+                best_expr, len_best_expr = mse_dict[m]
             else:
-                best_expr, len_best_expr = mse_dict[min_mse]
+                best_expr, len_best_expr = mse_dict[found_mses[0]]
+
         else:
             best_expr = list(self.exprs_dict.keys())[0]
             len_best_expr = len(self.exprs_dict[best_expr])

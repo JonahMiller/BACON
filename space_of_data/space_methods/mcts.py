@@ -8,7 +8,7 @@ from collections import defaultdict
 from utils import df_helper
 from utils import losses as loss_helper
 from space_of_laws.laws_methods.bacon1 import BACON_1
-from space_of_laws.laws_methods.mcts_bacon6 import BACON_6
+# from space_of_laws.laws_methods.mcts_bacon6 import BACON_6
 from space_of_data.layer_methods.layer_select import layer
 
 
@@ -87,7 +87,7 @@ class MonteCarloTreeSearchNode():
     def is_fully_expanded(self):
         return len(self._untried_actions) == 0
 
-    def best_child(self, c_param=4):
+    def best_child(self, c_param=1):
         choices_weights = [(c.q() / c.n()) + c_param * np.sqrt(np.log(self.n()) / c.n()) for c in self.children]
         return self.children[np.argmax(choices_weights)]
 
@@ -116,10 +116,8 @@ class MonteCarloTreeSearchNode():
 
 
 def get_legal_actions(var_list):
-    epsilon = [0.0001]
+    epsilon = [0.001]
     delta = [0.08]
-    # epsilon = [0.0001, 0.001]
-    # delta = [0.04, 0.08]
     actions = list(product(epsilon, delta))
     return actions
 
@@ -145,7 +143,7 @@ def move(var_list, action):
             layer_in_context = layer(df, lambda df, col_1, col_2, afs:
                                      bacon_1(df, col_1, col_2, afs,
                                              epsilon=action[0], delta=action[1]),
-                                     symbols, "user_input")
+                                     symbols, "prop_mse")
             new_df, symbols = layer_in_context.run_single_iteration()
             new_dfs.extend(new_df)
 
@@ -182,24 +180,20 @@ def game_result(var_list, initial_df):
         return dict_entry["score"]
 
     eqns = dict_entry["final_eqns"]
-    print("STTTTTTTTTTTTTTTTTTTTTTTTTTTAQRT")
-    print(eqns)
 
     try:
         if len(eqns) > 0:
             # eqn = df_helper.timeout(BACON_6(initial_df, eqns).run_iteration,
             #                         timeout_duration=3, default="fail")
             eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
-                                                            eqns,
-                                                            var).iterate_through_dummys,
+                                                              eqns,
+                                                              var).iterate_through_dummys,
                                     timeout_duration=3, default="fail")
         else:
             eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
-                                                            eqns,
-                                                            var).iterate_through_dummys,
+                                                              eqns,
+                                                              var).iterate_through_dummys,
                                     timeout_duration=3, default="fail")
-        print(eqn)
-        print("ENDDDDDDDDDDDDDDDDDDDDNDND")
 
         if eqn == "fail":
             # print("equations not combining")
@@ -222,7 +216,7 @@ def game_result(var_list, initial_df):
             return score
     except Exception:
         df_dict[str(var_list)] = {"final_eqns": eqns, "score": -100000, "eqn_form": eqn}
-        return -100000        
+        return -100000
 
 
 def main_mcts(initial_df, init_state):

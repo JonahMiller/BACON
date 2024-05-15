@@ -18,7 +18,7 @@ class BACON_1:
     def __init__(self, initial_df, all_found_symbols,
                  epsilon=0.001, delta=0.1,
                  epsilon_scale=1.1, delta_scale=1.05,
-                 verbose=False):
+                 c_val=0.02, verbose=False):
         self.initial_df = initial_df
         self.init_symbols = list(initial_df)
         self.all_found_symbols = all_found_symbols
@@ -29,6 +29,7 @@ class BACON_1:
         self.epsilon_scale = epsilon_scale
         self.delta = delta
         self.delta_scale = delta_scale
+        self.c_val = c_val
 
     def bacon_iterations(self):
         '''
@@ -57,7 +58,6 @@ class BACON_1:
             if self.verbose:
                 print("BACON 1: No relation found within acceptable parameters.")
                 print("         Rerunning with increased epsilon and delta params.")
-            # print("INNNNNNNNNNNNNNNNNNNNNNNNNNCREMENT")
             new_eps = self.epsilon_scale*self.epsilon
             new_delta = self.delta_scale*self.delta
             return BACON_1(self.initial_df, self.all_found_symbols,
@@ -77,8 +77,8 @@ class BACON_1:
         self.check_constant(b_, abs(b))
 
         if self.update != "constant":
-            if 1 - abs(r) < self.epsilon and abs(c/fmean(b)) > 0.02:
-                print(1 - abs(r), self.epsilon, abs(c/fmean(b)), b_, a_)
+            if 1 - abs(r) < self.epsilon and abs(c/fmean(b)) > self.c_val:
+                # print(1-abs(r), abs(c/fmean(b)), self.subs_expr(a_), self.subs_expr(b_))
                 self.linear(a_, b_, a, b)
 
             elif r > 0:

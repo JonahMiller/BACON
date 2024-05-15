@@ -101,7 +101,8 @@ class BACON_6:
 
         if abs(c) < 0.00001:
             c = 0
-        expr = parse_expr(f"{m*eta_} + {c}")
+        # expr = parse_expr(f"{m*eta_} + {c}")
+        expr = parse_expr(f"{m*eta_}")
 
         if self.verbose:
             final_expr = simplify(expr)

@@ -5,7 +5,7 @@ from space_of_laws.laws_methods.low_level_pysr import PYSR
 
 def bacon_1(df, col_1, col_2, all_found_symbols,
             verbose=False, delta=0.1, epsilon=0.001,
-            epsilon_scale=1.1, delta_scale=1.05):
+            epsilon_scale=1.1, delta_scale=1.05, c_val=0.02):
     """
     Runs an instance of BACON.1 on the specified columns
     col_1 and col_2 in the specified dataframe df.
@@ -20,7 +20,7 @@ def bacon_1(df, col_1, col_2, all_found_symbols,
         else:
             print(f"Laws manager: Running BACON 1 on variables [{col_1}, {col_2}]")
     bacon_1_instance = BACON_1(df[[col_1, col_2]], all_found_symbols,
-                               epsilon, delta, epsilon_scale, delta_scale,
+                               epsilon, delta, epsilon_scale, delta_scale, c_val,
                                verbose=verbose)
     return bacon_1_instance.bacon_iterations()
 
