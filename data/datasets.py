@@ -68,7 +68,22 @@ def birthday(noise=0):
     Q = np.vectorize(Q_func)(N)
     if noise:
         Q += np.random.normal(0, noise*abs(Q))
-    return [N, N*Q], [Symbol("N"), Symbol("N")*Symbol("Q")]
+    return [N, N*Q], [Symbol("N_"), Symbol("Q*N_")]
+
+
+# def birthday(noise=0):
+
+#     def Q_func(n):
+#         q = 0
+#         for k in range(1, n + 1):
+#             q += comb(n, n - k)*factorial(k)/n**k
+#         return q
+
+#     N = np.array([i for i in range(2, 10)])
+#     Q = np.vectorize(Q_func)(N)
+#     if noise:
+#         Q += np.random.normal(0, noise*abs(Q))
+#     return [N*Q, N], [Symbol("N")*Symbol("Q"), Symbol("N")]
 
 
 # https://scientific-python.readthedocs.io/en/latest/notebooks_rst/3_Ordinary_Differential_Equations/02_Examples/Lotka_Volterra_model.html

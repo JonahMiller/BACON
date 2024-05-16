@@ -1,6 +1,8 @@
-{
+{   
+    "layer_method": "",
     "layer_args": {},
 
+    "laws_method": "bacon.6",
     "laws_args": {"expression": "j*nu**(3/2) + k*nu + l*nu**(1/2)",
                   "unknowns": ["j", "k", "l"],
                   "step": 4,

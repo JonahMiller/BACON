@@ -266,7 +266,6 @@ def score(init_df, eqns):
 
 
 def score_bacon_6(init_df, eqns):
-    key_var = init_df.columns[-1]
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print("The constant equations found are:")
     for eqn in eqns:

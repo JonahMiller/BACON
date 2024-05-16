@@ -27,8 +27,8 @@ class BACON_6:
         self.verbose = verbose
         self.return_print = return_print
 
-        self.eta = self.data[0].astype("float64")
-        self.nu = self.data[1].astype("float64")
+        self.nu = self.data[0].astype("float64")
+        self.eta = self.data[1].astype("float64")
         self.parse_expression(expression, unknowns)
 
     def parse_expression(self, expression, unknowns):
@@ -107,8 +107,8 @@ class BACON_6:
         expr = parse_expr(f"{m*eta_} + {c}")
 
         if self.verbose:
-            final_expr = simplify(expr.subs(eta, self.symbols[0]).subs(nu, self.symbols[1]))
-            print(f"BACON 6: Expression determined is {self.symbols[0]} = {final_expr}")
+            final_expr = simplify(expr.subs(nu, self.symbols[0]).subs(eta, self.symbols[1]))
+            print(f"BACON 6: Expression determined is {self.symbols[1]} = {final_expr}")
 
         return expr
 
@@ -122,7 +122,7 @@ class BACON_6:
         eqn_rhs = self.output_variables()
 
         if self.return_print:
-            return None, [self.symbols[0], eqn_rhs.subs(eta, self.symbols[0]).subs(nu, self.symbols[1])], "print"
+            return None, [self.symbols[1], eqn_rhs.subs(nu, self.symbols[0]).subs(eta, self.symbols[1])], "print"
 
         correct_equation_form = laws_helper.return_equation(eqn_rhs, self.symbols,
                                                             self.all_found_symbols,

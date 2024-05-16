@@ -80,5 +80,4 @@ class loss_calc:
         values of the dependent term.
         '''
         self.calc_eqn_vals()
-        return min(mse(self.calc_vals, self.key_vals),
-                   mse(-self.calc_vals, self.key_vals))
+        return mse(self.calc_vals, self.key_vals)

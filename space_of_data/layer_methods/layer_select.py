@@ -129,7 +129,7 @@ class layer:
             return best_expr
 
         else:
-            self.ranking_method = "min_mse"
+            self.ranking_method = "weight_mses"
 
     def rank_bacon_3(self):
         if len(self.exprs_found) != 1:
@@ -345,7 +345,7 @@ class layer:
             expr = self.rank_gp()
         elif self.ranking_method == "min_mse":
             expr = self.rank_min_mse()
-        elif self.ranking_method == "prop_mse":
+        elif self.ranking_method == "weight_mses":
             expr = self.rank_propto_mse()
         elif self.ranking_method == "satisfy_equality":
             expr = self.rank_satisfy()

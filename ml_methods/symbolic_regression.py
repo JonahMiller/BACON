@@ -16,9 +16,12 @@ def run_pysr(data, variables):
 
     model = PySRRegressor(
         niterations=30,
-        maxsize=15,
+        maxsize=30,
         binary_operators=["+", "*", "/", "-"],
-        extra_sympy_mappings={"inv": lambda x: 1 / x},
+        unary_operators=["sqrt(x::T) where {T} = (x >= 0) ? x : T(-1e9)"],
+        extra_sympy_mappings={"inv": lambda x: 1 / x,
+                              "sqrt": lambda x: x**(1/2)},
+        nested_constraints={"sqrt": {"sqrt": 0}},
         loss="loss(prediction, target) = (prediction - target)^2",
         model_selection="accuracy",
         temp_equation_file=True,

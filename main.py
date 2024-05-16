@@ -11,7 +11,7 @@ from space_of_data.layer_manager import layer_main
 
 from space_of_data.space_methods.data_space_manager import data_space
 from space_of_data.space_methods.bacon5 import BACON_5
-from space_of_data.space_methods.mcts import main_mcts
+from space_of_data.space_methods.mcts2 import main_mcts
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -24,13 +24,13 @@ def ParseArgs():
     parser.add_argument("--noise", type=float, default=0., metavar="N",
                         help="how much noise to add to the dataset")
     parser.add_argument("--space_of_data", type=str, default=None, metavar="SD",
-                        choices=["bacon.3", "gp_ranking", "min_mse", "prop_mse", "satisfy_equality",
+                        choices=["bacon.3", "gp_ranking", "min_mse", "weight_mses", "satisfy_equality",
                                  "user_input", "popularity", "bacon.5", "mcts"],
                         help="how to traverse the space of data")
     parser.add_argument("--space_of_laws", type=str, default="bacon.1", metavar="SL",
                         choices=["bacon.1", "bacon.6", "pysr"],
                         help="how to traverse the space of laws")
-    parser.add_argument("--additional_args", type=str, metavar="f", default=None,
+    parser.add_argument("--args", type=str, metavar="f", default=None,
                         help="json file for args used in space of data setting")
     parser.add_argument("--denoise", action="store_true",
                         help="denoises dataset using a gaussian process")
@@ -48,8 +48,8 @@ def main():
     if args.denoise:
         initial_df = gp(initial_df).denoise()
 
-    if args.additional_args:
-        with open(args.additional_args, "r") as j:
+    if args.args:
+        with open(args.args, "r") as j:
             all_args = json.loads(j.read())
             layer_args = all_args["layer_args"]
             laws_args = all_args["laws_args"]

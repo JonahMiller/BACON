@@ -59,7 +59,7 @@ class data_space:
             results = self.laws_method(ave_df, ave_df.columns[0], ave_df.columns[1], self.symbols)
 
             if results[2] == "print":
-                print(f"Data space: {results[1][0]} = {results[1][1]}")
+                df_helper.score(self.initial_df, [Eq(results[1][0], results[1][1])])
                 sys.exit()
 
             if not results[1]:
