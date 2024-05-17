@@ -48,7 +48,7 @@ def black(noise=0):
 
 
 def kepler(noise=0):
-    n = np.arange(1, 11)
+    n = np.arange(1, 7, dtype="float64")
     P = np.power(n, 3)
     D = np.power(n, 2)
     if noise:

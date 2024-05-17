@@ -5,6 +5,6 @@
                   "delta": 0.038,
                   "verbose": false},
 
-    "data_space_args": {"delta": 0.01,
+    "data_space_args": {"Delta": 0.01,
                         "verbose": false}
 }

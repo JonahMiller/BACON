@@ -30,6 +30,7 @@ class BACON_1:
         self.delta = delta
         self.delta_scale = delta_scale
         self.c_val = c_val
+        print(initial_df)
 
     def bacon_iterations(self):
         '''
@@ -42,7 +43,7 @@ class BACON_1:
         self.update = ""
 
         j = 0
-        while self.update != "constant" and j < 4:
+        while self.update != "constant" and j < 5:
             sy_start = len(self.symbols)
             self.bacon_instance(0, -1)
             if self.update == "product" or self.update == "division":
@@ -118,7 +119,7 @@ class BACON_1:
         if all(M*(1 - self.delta) < val < M*(1 + self.delta) for val in data):
             self.update = "constant"
             if self.verbose:
-                print(f"BACON 1: {symbol} is constant within our error")
+                print(f"BACON 1: {self.subs_expr(symbol)} is constant within our error")
 
     def linear(self, symbol_1, symbol_2, data_1, data_2):
         '''
@@ -132,8 +133,7 @@ class BACON_1:
         self.lin_data = ["linear", k, self.subs_expr(symbol_2 - k*symbol_1),
                          m, self.subs_expr(symbol_2), self.subs_expr(symbol_1)]
         if self.verbose:
-            print(f"BACON 1: {symbol_2} is linearly prop. to {symbol_1},")
-            print(f"         we then see {self.symbols[-1]} is constant")
+            print(f"BACON 1: {self.subs_expr(symbol_2)} is linearly prop. to {self.subs_expr(symbol_1)}, we then see {self.subs_expr(self.symbols[-1])} is constant")  # noqa
 
     def product(self, symbol_1, symbol_2, data_1, data_2):
         '''
@@ -143,8 +143,7 @@ class BACON_1:
         self.data.append(data_1*data_2)
         self.update = "product"
         if self.verbose:
-            print(f"BACON 1: {symbol_1} increases whilst {symbol_2} decreases,")
-            print(f"         considering new variable {simplify(symbol_1*symbol_2)}")
+            print(f"BACON 1: {self.subs_expr(symbol_1)} increases whilst {self.subs_expr(symbol_2)} decreases, considering new variable {self.subs_expr(simplify(symbol_1*symbol_2))}")  # noqa
 
     def division(self, symbol_1, symbol_2, data_1, data_2):
         '''
@@ -154,8 +153,7 @@ class BACON_1:
         self.data.append(data_1/data_2)
         self.update = "division"
         if self.verbose:
-            print(f"BACON 1: {symbol_1} increases whilst {symbol_2} increases,")
-            print(f"         considering new variable {simplify(symbol_1/symbol_2)}")
+            print(f"BACON 1: {self.subs_expr(symbol_1)} increases whilst {self.subs_expr(symbol_2)} increases, considering new variable {self.subs_expr(simplify(symbol_1/symbol_2))}")  # noqa
 
     def subs_expr(self, expr):
         e1 = expr.subs(nu, self.init_symbols[0])

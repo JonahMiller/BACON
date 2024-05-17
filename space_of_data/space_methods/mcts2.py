@@ -87,7 +87,7 @@ class MonteCarloTreeSearchNode():
     def is_fully_expanded(self):
         return len(self._untried_actions) == 0
 
-    def best_child(self, c_param=15):
+    def best_child(self, c_param=6):
         choices_weights = [(c.q() / c.n()) + c_param * np.sqrt(np.log(self.n()) / c.n()) for c in self.children]
         if c_param == 0:
             print(choices_weights)
@@ -106,9 +106,9 @@ class MonteCarloTreeSearchNode():
         return current_node
 
     def best_action(self):
-        simulation_no = 500
+        simulation_no = 200
         for idx in range(simulation_no):
-            if idx % 50 == 0:
+            if idx % 20 == 0:
                 print(f"SIMULATION NUMBER {idx}")
             v = self._tree_policy()
             reward = v.rollout()
@@ -120,6 +120,8 @@ class MonteCarloTreeSearchNode():
 
 
 def get_legal_actions(var_list):
+    # eps_del_list = [(0.02, 0.04), (0.02, 0.08), (0.05, 0.04), (0.05, 0.08)]
+    eps_del_list = [(0.02, 0.04)]
     dict_entry = df_dict[str(var_list)]
     if "dfs" not in dict_entry:
         return []
@@ -127,19 +129,26 @@ def get_legal_actions(var_list):
     symbols = list(sum(sym for sym in list(var_list)).free_symbols)
     df_len = len(dfs[0].columns)
     if df_len == 2:
-        return [(0.02, 0.04)]
+        return eps_del_list
 
     exprs = {idx: [] for idx in range(len(dfs))}
     for idx, df in enumerate(dfs):
         if df_len > 2:
-            layer_in_context = layer(df, lambda df, col_1, col_2, afs:
-                                     bacon_1(df, col_1, col_2, afs,
-                                             epsilon=0.02, delta=0.04),
-                                     symbols, "mcts")
-            exprs_found, lin_relns = layer_in_context.get_relations()
+            expr_list = []
+            lin_relns = {}
+            for eps, delt in eps_del_list:
+                layer_in_context = layer(df, lambda df, col_1, col_2, afs:
+                                         bacon_1(df, col_1, col_2, afs,
+                                                 epsilon=eps, delta=delt),
+                                         symbols, "mcts")
+                exprs_found, lin_reln = layer_in_context.get_relations()
+                lin_relns = lin_relns | lin_reln
+                expr_list.extend(list(exprs_found.keys()))
+
+            expr_list_ = list(set(expr_list))
 
             exprs_list = [[expr, lin_relns[expr]] if expr in lin_relns
-                          else expr for expr in list(exprs_found.keys())]
+                          else expr for expr in expr_list_]
 
             exprs[idx] = exprs_list
 
@@ -255,37 +264,32 @@ def game_result(var_list, initial_df):
 
         loss = loss_helper.loss_calc(initial_df, eqn).loss()
 
-        if loss < 5:
+        if isinstance(loss, complex):
+            print("score is complex - likely solvable by hand")
+            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -2, "eqn_form": eqn}
+            return -2
+
+        if loss < 10:
             score = 2
-        elif loss < 10:
-            score = 1
-        elif loss < 12:
-            score = 0.8
         elif loss < 14:
-            score = 0.6
-        elif loss < 18:
-            score = 0.4
+            score = 0.8
+        elif loss < 16:
+            score = 0.5
         elif loss < 20:
             score = 0.2
-        elif loss < 40:
+        elif loss < 30:
             score = 0.1
         else:
             score = 0
 
+        num_var = len(eqn.free_symbols)
+        if num_var < len(initial_df.columns) - 1:
+            score -= 1.5*(len(initial_df.columns) - num_var)
+        df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn, "loss": loss}
         print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with score {score} and loss {loss}")
-
-        if isinstance(score, complex):
-            print("score is complex - likely solvable by hand")
-            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -2, "eqn_form": eqn}
-            return -2
-        else:
-            num_var = len(eqn.free_symbols)
-            if num_var < len(initial_df.columns):
-                score -= 0.1*(len(initial_df.columns) - num_var)
-            df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn}
-            return score
+        return score
     except Exception:
-        df_dict[str(var_list)] = {"final_eqns": eqns, "score": -10, "eqn_form": eqn}
+        df_dict[str(var_list)] = {"final_eqns": eqns, "score": -10}
         return -10
 
 
@@ -302,4 +306,5 @@ def main_mcts(initial_df, init_state):
     print(f"FINAL NODE STATE IS {init_state}")
     eqn = df_dict[str(init_state)]['eqn_form']
     final_score = df_dict[str(init_state)]['score']
-    print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with score {final_score} and loss {1000*(1 - final_score)}")
+    loss = df_dict[str(init_state)]['loss']
+    print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with score {final_score} and loss {loss}")

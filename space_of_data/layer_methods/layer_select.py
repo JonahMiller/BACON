@@ -45,8 +45,8 @@ class layer:
                 invalid_returns += 1
 
         if self.verbose:
-            print(f"Ranking layer: Expressions found are {self.exprs_found}")
-            # print(f"Indexes for expression are {self.exprs_idx}")
+            print("Ranking layer: Expressions found with associated popularity are:")
+            print(f"               {self.exprs_found}")
 
         if invalid_returns == len(s_dfs):
             return "Invalid"
@@ -112,7 +112,6 @@ class layer:
         return best_expr
 
     def rank_popularity(self):
-        # best_expr = max(self.exprs_found, key=self.exprs_found.get)
         most_pop_count = max(self.exprs_found.values())
         self.exprs_found = {k: v for k, v in self.exprs_found.items() if v == most_pop_count}
 
@@ -129,7 +128,9 @@ class layer:
             return best_expr
 
         else:
-            self.ranking_method = "weight_mses"
+            self.ranking_method = "min_mse"
+            if self.verbose:
+                print("Ranking layer: Equal popularity of most common expressions - now ranking by MSE")
 
     def rank_bacon_3(self):
         if len(self.exprs_found) != 1:

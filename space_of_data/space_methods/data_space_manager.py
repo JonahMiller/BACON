@@ -10,14 +10,14 @@ class data_space:
     Manages the layers of the dataframe, including the potentially new layers found
     when linear relationships are found. Then it runs BACON.1 on the those two columns.
     """
-    def __init__(self, initial_df, layer_method, laws_method, delta=0.2, verbose=False):
+    def __init__(self, initial_df, layer_method, laws_method, Delta=0.2, verbose=False):
         self.initial_df = initial_df
         self.dfs = [initial_df]
         self.layer_method = layer_method
         self.laws_method = laws_method
         self.verbose = verbose
         self.symbols = list(sum(sym for sym in list(initial_df)).free_symbols)
-        self.delta = delta
+        self.Delta = Delta
         self.eqns = []
 
     def run_iterations(self):
@@ -29,21 +29,18 @@ class data_space:
             new_dfs = []
 
             self.dfs, self.eqns = df_helper.check_const_col(self.dfs, self.eqns,
-                                                            self.delta, self.verbose)
+                                                            self.Delta, self.verbose)
 
             for df in self.dfs:
-                layer_in_context = self.layer_method(df, self.laws_method, self.symbols)
-                new_df, self.symbols = layer_in_context.run_single_iteration()
-                new_dfs.extend(new_df)
-
                 if self.verbose:
                     var1, var2 = df.columns[-1], df.columns[-2]
                     unused_df = df.iloc[:, :-2]
                     col_names = unused_df.columns.tolist()
+                    print(f"Data space: Calculating laws on variables [{var1}, {var2}] and keeping constant unused variables {col_names}")  # noqa
 
-                    print(f"Data space: Calculating laws on variables [{var1}, {var2}] and")
-                    print(f"            keeping constant unused variables {col_names}")
-                    print(f"            displayed fix variables {[df.columns[-1] for df in new_df]}.")
+                layer_in_context = self.layer_method(df, self.laws_method, self.symbols)
+                new_df, self.symbols = layer_in_context.run_single_iteration()
+                new_dfs.extend(new_df)
 
             self.dfs = new_dfs
 

@@ -56,7 +56,7 @@ class simplify_eqns:
             self.elim_dummy_var(dummy_var)
         assert len(self.eqns) == 1, "Not all equations combined"
         final_form = solve(self.eqns[0], self.key_var)
-        return Eq(final_form[0], self.key_var)
+        return Eq(final_form[-1], self.key_var)
 
 
 class loss_calc:

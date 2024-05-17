@@ -8,6 +8,6 @@
                   "c_val": 0.02,
                   "verbose": false},
 
-    "data_space_args": {"delta": 0.1,
+    "data_space_args": {"Delta": 0.1,
                         "verbose": false}
 }
