@@ -1,0 +1,14 @@
+{
+    "layer_method": "",
+    "layer_args": {},
+
+    "laws_method": "bacon.1",
+    "laws_args": {"epsilon": 0.02,
+                  "delta": 0.1,
+                  "epsilon_scale": 1.1,
+                  "delta_scale": 1.05,
+                  "c_val": 0.02,
+                  "verbose": true},
+
+    "data_space_args": {}
+}
