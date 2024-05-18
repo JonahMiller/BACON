@@ -51,7 +51,7 @@ class layer:
 
         return "Continue"
 
-    def rank_popularity(self):
+    def rank_popular(self):
         # best_expr = max(self.exprs_found, key=self.exprs_found.get)
         most_pop_count = max(self.exprs_found.values())
         self.exprs_found = {k: v for k, v in self.exprs_found.items() if v == most_pop_count}

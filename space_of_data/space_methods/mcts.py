@@ -144,7 +144,7 @@ def move(var_list, action):
             layer_in_context = layer(df, lambda df, col_1, col_2, afs:
                                      bacon_1(df, col_1, col_2, afs,
                                              epsilon=action[0], delta=action[1]),
-                                     symbols, "popularity")
+                                     symbols, "popular")
             new_df, symbols = layer_in_context.run_single_iteration()
             new_dfs.extend(new_df)
 

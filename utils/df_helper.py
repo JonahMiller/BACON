@@ -4,7 +4,7 @@ from statistics import fmean
 from sympy import Symbol, Eq, lambdify, simplify, factor
 
 import utils.losses as loss_helper
-from space_of_laws.laws_methods.mcts_bacon6 import BACON_6
+from space_of_laws.laws_methods.bacon7_law import BACON_7_law
 
 
 def new_eqn(mini_expr, temp_val, full_expr):
@@ -265,13 +265,13 @@ def score(init_df, eqns):
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 
-def score_bacon_6(init_df, eqns):
+def score_bacon_7(init_df, eqns):
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print("The constant equations found are:")
     for eqn in eqns:
         print(f"{eqn.rhs} = {eqn.lhs}")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    eqn = BACON_6(init_df, eqns).run_iteration()
+    eqn = BACON_7_law(init_df, eqns).run_iteration()
     loss = loss_helper.loss_calc(init_df, eqn).loss()
     print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with loss {loss}.")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")

@@ -47,6 +47,14 @@ def black(noise=0):
             Symbol("T_f", real=True)]
 
 
+def synthetic(noise=0):
+    X = np.arange(1, 6, dtype="float64")
+    Y = 3/(X+2)
+    if noise:
+        Y += np.random.normal(0, noise*abs(Y))
+    return [X, Y], [Symbol("X"), Symbol("Y")]
+
+
 def kepler(noise=0):
     n = np.arange(1, 7, dtype="float64")
     P = np.power(n, 3)
@@ -69,21 +77,6 @@ def birthday(noise=0):
     if noise:
         Q += np.random.normal(0, noise*abs(Q))
     return [N, N*Q], [Symbol("N_"), Symbol("Q*N_")]
-
-
-# def birthday(noise=0):
-
-#     def Q_func(n):
-#         q = 0
-#         for k in range(1, n + 1):
-#             q += comb(n, n - k)*factorial(k)/n**k
-#         return q
-
-#     N = np.array([i for i in range(2, 10)])
-#     Q = np.vectorize(Q_func)(N)
-#     if noise:
-#         Q += np.random.normal(0, noise*abs(Q))
-#     return [N*Q, N], [Symbol("N")*Symbol("Q"), Symbol("N")]
 
 
 # https://scientific-python.readthedocs.io/en/latest/notebooks_rst/3_Ordinary_Differential_Equations/02_Examples/Lotka_Volterra_model.html
@@ -116,5 +109,6 @@ def allowed_data():
             "kepler": kepler,
             "birthday": birthday,
             "lv": lotka_volterra,
+            "synthetic": synthetic,
            }
     return data

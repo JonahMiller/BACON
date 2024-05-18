@@ -111,7 +111,7 @@ class layer:
             self.symbols.append(self.lin_relns[best_expr][0])
         return best_expr
 
-    def rank_popularity(self):
+    def rank_popular(self):
         most_pop_count = max(self.exprs_found.values())
         self.exprs_found = {k: v for k, v in self.exprs_found.items() if v == most_pop_count}
 
@@ -130,7 +130,7 @@ class layer:
         else:
             self.ranking_method = "min_mse"
             if self.verbose:
-                print("Ranking layer: Equal popularity of most common expressions - now ranking by MSE")
+                print("Ranking layer: Equal popular of most common expressions - now ranking by MSE")
 
     def rank_bacon_3(self):
         if len(self.exprs_found) != 1:
@@ -337,8 +337,8 @@ class layer:
 
         if self.ranking_method == "bacon.3":
             expr = self.rank_bacon_3()
-        elif self.ranking_method == "popularity":
-            expr = self.rank_popularity()
+        elif self.ranking_method == "popular":
+            expr = self.rank_popular()
 
         self.construct_dfs()
 

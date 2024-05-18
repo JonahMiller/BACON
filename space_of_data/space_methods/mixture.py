@@ -4,7 +4,7 @@ import sys
 
 from utils import df_helper as df_helper
 from space_of_data.layer_methods.gp_ranking import ranking_layer
-from space_of_data.layer_methods.popularity import popular_layer
+from space_of_data.layer_methods.popular import popular_layer
 
 
 class mixture:
