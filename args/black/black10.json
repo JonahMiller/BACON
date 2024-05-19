@@ -8,5 +8,5 @@
                   "verbose": false},
 
     "data_space_args": {"Delta": 0.1,
-                        "verbose": true}
+                        "verbose": false}
 }

@@ -21,7 +21,6 @@ class data_space:
         self.Delta = Delta
         self.bacon_7_law = bacon_7_law
         self.eqns = []
-        print(self.initial_df)
 
     def run_iterations(self):
         """

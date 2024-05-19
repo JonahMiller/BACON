@@ -3,11 +3,9 @@
     "layer_args": {"verbose": true},
 
     "laws_method": "bacon.1",
-    "laws_args": {"epsilon": 0.01,
+    "laws_args": {"epsilon": 0.03,
                   "delta": 0.1,
-                  "epsilon_scale": 1.12,
-                  "delta_scale": 1.05,
-                  "c_val": 0.3,
+                  "c_val": 2.2,
                   "verbose": false},
 
     "data_space_args": {"Delta": 0.1,

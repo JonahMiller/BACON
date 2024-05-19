@@ -9,6 +9,5 @@
                   "verbose": false},
 
     "data_space_args": {"Delta": 0.01,
-                        "bacon_7_law": true,
                         "verbose": false}
 }

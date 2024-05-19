@@ -61,7 +61,9 @@ class BACON_1:
             new_eps = self.epsilon_scale*self.epsilon
             new_delta = self.delta_scale*self.delta
             return BACON_1(self.initial_df, self.all_found_symbols,
-                           new_eps, new_delta, self.verbose).bacon_iterations()
+                           epsilon=new_eps, delta=new_delta,
+                           epsilon_scale=self.epsilon_scale, delta_scale=self.delta_scale,
+                           c_val=self.c_val, verbose=self.verbose).bacon_iterations()
 
         return self.data[-1], self.subs_expr(self.symbols[-1]), self.lin_data
 
