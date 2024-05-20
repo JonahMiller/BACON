@@ -49,7 +49,6 @@ class BACON_1:
                 self.bacon_instance(1, -2)
             elif self.update != "linear" and self.update != "constant":
                 self.bacon_instance(1, -1)
-            j += 1
             sy_end = len(self.symbols)
             if sy_start == sy_end or self.update == "linear":
                 break

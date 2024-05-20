@@ -1,15 +1,15 @@
 # https://ai-boson.github.io/mcts/
 import numpy as np
 from statistics import fmean
-from sympy import Eq, factor
+from sympy import Eq, factor, Symbol
 from itertools import product
 from collections import defaultdict
 
 from utils import df_helper
+from utils import laws_helper
 from utils import losses as loss_helper
 from space_of_laws.laws_methods.bacon1 import BACON_1
-# from space_of_laws.laws_methods.mcts_bacon6 import BACON_6
-from space_of_data.layer_methods.layer_select import layer
+from space_of_data.space_methods.mcts_layer import layer, construct_dfs
 
 
 def bacon_1(df, col_1, col_2, all_found_symbols,
@@ -87,9 +87,10 @@ class MonteCarloTreeSearchNode():
     def is_fully_expanded(self):
         return len(self._untried_actions) == 0
 
-    def best_child(self, c_param=0.1):
+    def best_child(self, c_param=6):
         choices_weights = [(c.q() / c.n()) + c_param * np.sqrt(np.log(self.n()) / c.n()) for c in self.children]
-        print(choices_weights)
+        if c_param == 0:
+            print(choices_weights)
         return self.children[np.argmax(choices_weights)]
 
     def rollout_policy(self, possible_moves):
@@ -105,28 +106,89 @@ class MonteCarloTreeSearchNode():
         return current_node
 
     def best_action(self):
-        simulation_no = 30
+        simulation_no = 200
         for idx in range(simulation_no):
-            if idx % 5 == 0:
+            if idx % 20 == 0:
                 print(f"SIMULATION NUMBER {idx}")
             v = self._tree_policy()
             reward = v.rollout()
-            print(reward)
             v.backpropagate(reward)
+        print("GETTING BEST CHILD STATES")
+        print([c.state for c in self.children])
+        print([c._results for c in self.children])
         return self.best_child(c_param=0.).state, df_dict[str(self.best_child(c_param=0.).state)]
 
 
 def get_legal_actions(var_list):
-    epsilon = [0.001, 0.002, 0.004, 0.006, 0.008, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1]
-    delta = [0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12]
-    actions = list(product(epsilon, delta))
-    return actions
+    # eps_del_list = [(0.02, 0.04), (0.02, 0.08), (0.05, 0.04), (0.05, 0.08)]
+    eps_del_list = [(0.02, 0.04)]
+    dict_entry = df_dict[str(var_list)]
+    if "dfs" not in dict_entry:
+        return []
+    dfs = dict_entry["dfs"]
+    symbols = list(sum(sym for sym in list(var_list)).free_symbols)
+    df_len = len(dfs[0].columns)
+    if df_len == 2:
+        return eps_del_list
+
+    exprs = {idx: [] for idx in range(len(dfs))}
+    for idx, df in enumerate(dfs):
+        if df_len > 2:
+            expr_list = []
+            lin_relns = {}
+            for eps, delt in eps_del_list:
+                layer_in_context = layer(df, lambda df, col_1, col_2, afs:
+                                         bacon_1(df, col_1, col_2, afs,
+                                                 epsilon=eps, delta=delt),
+                                         symbols, "mcts")
+                exprs_found, lin_reln = layer_in_context.get_relations()
+                lin_relns = lin_relns | lin_reln
+                expr_list.extend(list(exprs_found.keys()))
+
+            expr_list_ = list(set(expr_list))
+
+            exprs_list = [[expr, lin_relns[expr]] if expr in lin_relns
+                          else expr for expr in expr_list_]
+
+            exprs[idx] = exprs_list
+
+    actions = list(product(*exprs.values()))
+
+    new_actions = []
+    if len(dfs) > 1:
+        for action in actions:
+            new_action = []
+            linear_vars = []
+            state = ""
+            for expr in action:
+                if isinstance(expr, list):
+                    symb = expr[1][0]
+                    if symb == Symbol("e"):
+                        state == "illegal"
+                        break
+                    if symb in linear_vars:
+                        new_symb = laws_helper.new_symbol(linear_vars)
+                        main_expr = expr[0].subs(symb, new_symb)
+                        new_expr = [main_expr,
+                                    [new_symb, main_expr, expr[1][2], expr[1][3]]]
+                        new_action.append(new_expr)
+                    else:
+                        linear_vars.append(symb)
+                        new_action.append(expr)
+                else:
+                    new_action.append(expr)
+            if state != "illegal":
+                new_actions.append(new_action)
+    else:
+        new_actions = actions
+
+    return new_actions
 
 
 def is_game_over(var_list):
-    if "dfs" in df_dict[str(var_list)]:
-        return False
-    return True
+    if "final_eqns" in df_dict[str(var_list)]:
+        return True
+    return False
 
 
 def move(var_list, action):
@@ -136,16 +198,17 @@ def move(var_list, action):
         eqns = dict_entry["eqns"]
     else:
         eqns = []
-    symbols = list(sum(sym for sym in list(var_list)).free_symbols)
     new_dfs, final_eqns = [], []
+    symbols = list(sum(sym for sym in list(var_list)).free_symbols)
     df_len = len(dfs[0].columns)
-    for df in dfs:
+    for idx, df in enumerate(dfs):
         if df_len > 2:
-            layer_in_context = layer(df, lambda df, col_1, col_2, afs:
-                                     bacon_1(df, col_1, col_2, afs,
-                                             epsilon=action[0], delta=action[1]),
-                                     symbols, "popular")
-            new_df, symbols = layer_in_context.run_single_iteration()
+            if isinstance(action[idx], list):
+                df_constructor = construct_dfs(df, expr=action[idx][0],
+                                               lin_relns=action[idx][1])
+            else:
+                df_constructor = construct_dfs(df, expr=action[idx])
+            new_df = df_constructor.construct_dfs()
             new_dfs.extend(new_df)
 
         elif df_len == 2:
@@ -184,8 +247,6 @@ def game_result(var_list, initial_df):
 
     try:
         if len(eqns) > 0:
-            # eqn = df_helper.timeout(BACON_6(initial_df, eqns).run_iteration,
-            #                         timeout_duration=3, default="fail")
             eqn = df_helper.timeout(loss_helper.simplify_eqns(initial_df,
                                                               eqns,
                                                               var).iterate_through_dummys,
@@ -197,28 +258,38 @@ def game_result(var_list, initial_df):
                                     timeout_duration=3, default="fail")
 
         if eqn == "fail":
-            # print("equations not combining")
+            print("equations not combining in good time")
             df_dict[str(var_list)] = {"final_eqns": eqns, "score": -3}
-            return -3
+            return -4
 
-        print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)}")
+        loss = loss_helper.loss_calc(initial_df, eqn).loss()
 
-        score = -loss_helper.loss_calc(initial_df, eqn).loss()
-
-        score = score/1000 + 1
-
-        if isinstance(score, complex):
-            # print("score is complex - likely solvable by hand")
+        if isinstance(loss, complex):
+            print("score is complex - likely solvable by hand")
             df_dict[str(var_list)] = {"final_eqns": eqns, "score": -2, "eqn_form": eqn}
             return -2
+
+        if loss < 10:
+            score = 2
+        elif loss < 14:
+            score = 0.8
+        elif loss < 16:
+            score = 0.5
+        elif loss < 20:
+            score = 0.2
+        elif loss < 30:
+            score = 0.1
         else:
-            num_var = len(eqn.free_symbols)
-            if num_var < len(initial_df.columns):
-                score -= 2*(len(initial_df.columns) - num_var)
-            df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn}
-            return score
+            score = 0
+
+        num_var = len(eqn.free_symbols)
+        if num_var < len(initial_df.columns) - 1:
+            score -= 1.5*(len(initial_df.columns) - num_var)
+        df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn, "loss": loss}
+        print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with score {score} and loss {loss}")
+        return score
     except Exception:
-        df_dict[str(var_list)] = {"final_eqns": eqns, "score": -10, "eqn_form": eqn}
+        df_dict[str(var_list)] = {"final_eqns": eqns, "score": -10}
         return -10
 
 
@@ -235,4 +306,5 @@ def main_mcts(initial_df, init_state):
     print(f"FINAL NODE STATE IS {init_state}")
     eqn = df_dict[str(init_state)]['eqn_form']
     final_score = df_dict[str(init_state)]['score']
-    print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with score {final_score}")
+    loss = df_dict[str(init_state)]['loss']
+    print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with score {final_score} and loss {loss}")

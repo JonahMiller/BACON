@@ -17,8 +17,8 @@ def run_pysr(data, variables):
     model = PySRRegressor(
         niterations=30,
         maxsize=15,
-        # binary_operators=["+", "*", "/", "-"],
-        binary_operators=["+", "*", "/", "-", "^"],
+        binary_operators=["+", "*", "/", "-"],
+        # binary_operators=["+", "*", "/", "-", "^"],
         extra_sympy_mappings={"inv": lambda x: 1 / x},
         loss="loss(prediction, target) = (prediction - target)^2",
         model_selection="accuracy",

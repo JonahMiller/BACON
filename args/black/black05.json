@@ -1,10 +1,13 @@
 {
-    "layer_method": "min_mse",
+    "layer_method": "popular",
     "layer_args": {"verbose": true},
 
     "laws_method": "bacon.1",
-    "laws_args": {"epsilon": 0.001,
-                  "delta": 0.06,
+    "laws_args": {"epsilon": 0.01,
+                  "delta": 0.112,
+                  "epsilon_scale": 1.12,
+                  "delta_scale": 1.051,
+                  "c_val": 0.3,
                   "verbose": false},
 
     "data_space_args": {"Delta": 0.1,
