@@ -1,15 +1,14 @@
 {
-    "layer_method": "popular",
+    "layer_method": "bacon.3",
     "layer_args": {"verbose": true},
 
     "laws_method": "bacon.1",
-    "laws_args": {"epsilon": 0.03,
+    "laws_args": {"epsilon": 0.0028,
                   "delta": 0.03,
-                  "c_val": 0.5,
-                  "epsilon_scale": 1.05,
-                  "delta_scale": 1.2,
+                  "c_val": 0.2,
                   "verbose": false},
 
     "data_space_args": {"Delta": 0.01,
+                        "bacon_7_law": true,
                         "verbose": false}
 }

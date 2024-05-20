@@ -3,11 +3,11 @@
     "layer_args": {"verbose": true},
 
     "laws_method": "bacon.1",
-    "laws_args": {"epsilon": 0.025,
-                  "delta": 0.04,
-                  "c_val": 0.5,
-                  "epsilon_scale": 1.05,
-                  "delta_scale": 1.2,
+    "laws_args": {"epsilon": 0.035,
+                  "delta": 0.05,
+                  "c_val": 0.8,
+                  "epsilon_scale": 1.03,
+                  "delta_scale": 1.15,
                   "verbose": false},
 
     "data_space_args": {"Delta": 0.01,
