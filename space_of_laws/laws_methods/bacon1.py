@@ -1,4 +1,3 @@
-import numpy as np
 from statistics import fmean
 from sympy import Symbol, simplify
 from scipy.stats import linregress as lr
@@ -74,12 +73,12 @@ class BACON_1:
         a, b = self.data[start], self.data[finish]
         a_, b_ = self.symbols[start], self.symbols[finish]
 
-        m, c, r, p, std_err = lr(abs(a), abs(b))
+        m, c, r, p, std_err = lr(a, b)
         self.check_constant(b_, abs(b))
 
         if self.update != "constant":
             if 1 - abs(r) < self.epsilon and abs(c/fmean(b)) > self.c_val:
-                self.linear(a_, b_, a, b)
+                self.linear(a_, b_, a, b, m)
 
             elif r > 0:
                 sy = simplify(a_/b_)
@@ -120,11 +119,10 @@ class BACON_1:
             if self.verbose:
                 print(f"BACON 1: {self.subs_expr(symbol)} is constant within our error")
 
-    def linear(self, symbol_1, symbol_2, data_1, data_2):
+    def linear(self, symbol_1, symbol_2, data_1, data_2, m):
         '''
         Calculates the terms involved in the found linear relationship.
         '''
-        m, c = np.polyfit(data_1, data_2, 1)
         self.symbols.append(simplify(symbol_2 - m*symbol_1))
         self.data.append(data_2 - m*data_1)
         self.update = "linear"
