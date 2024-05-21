@@ -41,7 +41,7 @@ class BACON_1:
         self.update = ""
 
         j = 0
-        while self.update != "constant" and j < 5:
+        while self.update != "constant" and j < 6:
             sy_start = len(self.symbols)
             self.bacon_instance(0, -1)
             if self.update == "product" or self.update == "division":
@@ -51,6 +51,7 @@ class BACON_1:
             sy_end = len(self.symbols)
             if sy_start == sy_end or self.update == "linear":
                 break
+            j += 1
 
         if self.update != "constant" and self.update != "linear":
             if self.verbose:

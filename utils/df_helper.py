@@ -206,20 +206,6 @@ def linear_relns(df, dummy_sym, expr_sym):
         pd.DataFrame({expr_sym: expr_data}, index=indecies)
 
 
-# def linear_relns(df, dummy_sym, expr_sym):
-#     indecies = df.index.values
-
-#     ave_df = average_df(df)
-
-#     data1 = ave_df.iloc[:, -1].values.tolist()
-#     data2 = ave_df.iloc[:, -2].values.tolist()
-
-#     m, c = np.polyfit(data2, data1, 1)
-
-#     return pd.DataFrame({dummy_sym: m}, index=indecies), \
-#         pd.DataFrame({expr_sym: c}, index=indecies)
-
-
 def lin_reln_2_df(df, backup_df, dummy_sym, expr_sym):
     """
     Uses a backup dataframe to find values for linear relationships.

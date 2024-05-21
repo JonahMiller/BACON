@@ -73,7 +73,9 @@ def main():
         ds.run_iterations()
     elif layer_method == "mcts":
         init_state = [init_symb[-1], len(init_symb)]
-        main_mcts(initial_df, init_state)
+        main_mcts(initial_df, init_state,
+                  laws_arg=laws_args,
+                  mcts_arg=data_space_args)
     else:
         ds = data_space(initial_df,
                         layer_main(layer_method, layer_args),

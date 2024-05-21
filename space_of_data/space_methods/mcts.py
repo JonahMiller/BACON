@@ -13,7 +13,8 @@ from space_of_data.space_methods.mcts_layer import layer, construct_dfs
 
 
 def bacon_1(df, col_1, col_2, all_found_symbols,
-            epsilon, delta, verbose=False):
+            verbose=False, delta=0.1, epsilon=0.001,
+            epsilon_scale=1.1, delta_scale=1.05, c_val=0.02):
     """
     Runs an instance of BACON.1 on the specified columns
     col_1 and col_2 in the specified dataframe df.
@@ -28,7 +29,7 @@ def bacon_1(df, col_1, col_2, all_found_symbols,
         else:
             print(f"Laws manager: Running BACON 1 on variables [{col_1}, {col_2}]")
     bacon_1_instance = BACON_1(df[[col_1, col_2]], all_found_symbols,
-                               epsilon, delta,
+                               epsilon, delta, epsilon_scale, delta_scale, c_val,
                                verbose=verbose)
     return bacon_1_instance.bacon_iterations()
 
@@ -87,7 +88,11 @@ class MonteCarloTreeSearchNode():
     def is_fully_expanded(self):
         return len(self._untried_actions) == 0
 
-    def best_child(self, c_param=6):
+    def best_child(self, c_run=""):
+        if c_run == "best_child":
+            c_param = 0
+        else:
+            c_param = mcts_args["c_param"]
         choices_weights = [(c.q() / c.n()) + c_param * np.sqrt(np.log(self.n()) / c.n()) for c in self.children]
         if c_param == 0:
             print(choices_weights)
@@ -106,9 +111,9 @@ class MonteCarloTreeSearchNode():
         return current_node
 
     def best_action(self):
-        simulation_no = 200
+        simulation_no = mcts_args["sim_num"]
         for idx in range(simulation_no):
-            if idx % 20 == 0:
+            if idx % int(simulation_no/10) == 0:
                 print(f"SIMULATION NUMBER {idx}")
             v = self._tree_policy()
             reward = v.rollout()
@@ -116,12 +121,10 @@ class MonteCarloTreeSearchNode():
         print("GETTING BEST CHILD STATES")
         print([c.state for c in self.children])
         print([c._results for c in self.children])
-        return self.best_child(c_param=0.).state, df_dict[str(self.best_child(c_param=0.).state)]
+        return self.best_child(c_run=0.).state, df_dict[str(self.best_child(c_run=0.).state)]
 
 
 def get_legal_actions(var_list):
-    # eps_del_list = [(0.02, 0.04), (0.02, 0.08), (0.05, 0.04), (0.05, 0.08)]
-    eps_del_list = [(0.02, 0.04)]
     dict_entry = df_dict[str(var_list)]
     if "dfs" not in dict_entry:
         return []
@@ -129,26 +132,21 @@ def get_legal_actions(var_list):
     symbols = list(sum(sym for sym in list(var_list)).free_symbols)
     df_len = len(dfs[0].columns)
     if df_len == 2:
-        return eps_del_list
-
+        if mcts_args["dataset"] == "black":
+            return [(0.02, 0.04), (0.02, 0.08), (0.05, 0.04), (0.05, 0.08)]
+        elif mcts_args["dataset"] == "ideal":
+            return [(0.02, 0.04), (0.1, 0.1), (0.06, 0.6)]
     exprs = {idx: [] for idx in range(len(dfs))}
     for idx, df in enumerate(dfs):
         if df_len > 2:
-            expr_list = []
-            lin_relns = {}
-            for eps, delt in eps_del_list:
-                layer_in_context = layer(df, lambda df, col_1, col_2, afs:
-                                         bacon_1(df, col_1, col_2, afs,
-                                                 epsilon=eps, delta=delt),
-                                         symbols, "mcts")
-                exprs_found, lin_reln = layer_in_context.get_relations()
-                lin_relns = lin_relns | lin_reln
-                expr_list.extend(list(exprs_found.keys()))
-
-            expr_list_ = list(set(expr_list))
+            layer_in_context = layer(df, lambda df, col_1, col_2, afs:
+                                     bacon_1(df, col_1, col_2, afs,
+                                             **laws_args),
+                                     symbols, "mcts")
+            exprs_found, lin_relns = layer_in_context.get_relations()
 
             exprs_list = [[expr, lin_relns[expr]] if expr in lin_relns
-                          else expr for expr in expr_list_]
+                          else expr for expr in list(exprs_found.keys())]
 
             exprs[idx] = exprs_list
 
@@ -214,7 +212,8 @@ def move(var_list, action):
         elif df_len == 2:
             ave_df = df_helper.average_df(df)
             results = bacon_1(ave_df, ave_df.columns[0], ave_df.columns[1], symbols,
-                              epsilon=action[0], delta=action[1])
+                              epsilon=action[0], delta=action[1], c_val=laws_args["c_val"],
+                              epsilon_scale=laws_args["epsilon_scale"], delta_scale=laws_args["delta_scale"])
             final_eqns.append(Eq(results[1], fmean(results[0])))
 
     if df_len > 2:
@@ -269,40 +268,72 @@ def game_result(var_list, initial_df):
             df_dict[str(var_list)] = {"final_eqns": eqns, "score": -2, "eqn_form": eqn}
             return -2
 
-        if loss < 10:
-            score = 2
-        elif loss < 14:
-            score = 0.8
-        elif loss < 16:
-            score = 0.5
-        elif loss < 20:
-            score = 0.2
-        elif loss < 30:
-            score = 0.1
-        else:
-            score = 0
+        if mcts_args["dataset"] == "black":
+            if loss < 10:
+                score = 2
+            elif loss < 14:
+                score = 0.8
+            elif loss < 16:
+                score = 0.5
+            elif loss < 20:
+                score = 0.2
+            elif loss < 30:
+                score = 0.1
+            else:
+                score = 0
 
-        num_var = len(eqn.free_symbols)
-        if num_var < len(initial_df.columns) - 1:
-            score -= 1.5*(len(initial_df.columns) - num_var)
+            num_var = len(eqn.free_symbols)
+            if num_var < len(initial_df.columns) - 1:
+                score -= 1.5*(len(initial_df.columns) - num_var)
+
+        elif mcts_args["dataset"] == "ideal":
+            if loss < 0.0001:
+                score = 3
+            elif loss < 0.001:
+                score = 2.5
+            elif loss < 0.01:
+                score = 2
+            elif loss < 0.027:
+                score = 1.4
+            elif loss < 0.029:
+                score = 1.1
+            elif loss < 0.4:
+                score = 0.7
+            elif loss < 1:
+                score = 0.3
+            elif loss < 10:
+                score = 0.1
+            else:
+                score = 0
+            num_var = len(eqn.free_symbols)
+            if num_var < len(initial_df.columns) - 1:
+                score -= 0.7*(len(initial_df.columns) - num_var)
+
         df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn, "loss": loss}
         print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with score {score} and loss {loss}")
         return score
+
     except Exception:
         df_dict[str(var_list)] = {"final_eqns": eqns, "score": -10}
-        return -10
+        return -1
 
 
-def main_mcts(initial_df, init_state):
+def main_mcts(initial_df, init_state,
+              laws_arg, mcts_arg):
     global df_dict
     dict_state = {"dfs": [initial_df]}
     df_dict = {str(init_state): dict_state}
+    global laws_args
+    laws_args = laws_arg
+    global mcts_args
+    mcts_args = mcts_arg
     while "dfs" in dict_state:
         print("@@@@@@@@@@@@@@@@@@@@@@@")
         root = MonteCarloTreeSearchNode(initial_df, state=init_state)
         init_state, dict_state = root.best_action()
         print(init_state)
         df_dict = {str(init_state): dict_state}
+        # raise Exception
     print(f"FINAL NODE STATE IS {init_state}")
     eqn = df_dict[str(init_state)]['eqn_form']
     final_score = df_dict[str(init_state)]['score']
