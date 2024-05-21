@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error as mse
 
 import sys
 sys.path.append("..")
-import data.datasets as data  # noqa
+import datasets as data  # noqa
 
 from pysr import PySRRegressor  # noqa
 

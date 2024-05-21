@@ -3,7 +3,7 @@ import time
 import json
 import pandas as pd
 
-import data.datasets as data
+import datasets as data
 from utils.gp import gp
 
 from space_of_laws.laws_manager import laws_main
