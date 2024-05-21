@@ -41,7 +41,7 @@ class BACON_1:
         self.update = ""
 
         j = 0
-        while self.update != "constant" and j < 6:
+        while self.update != "constant" and j < 5:
             sy_start = len(self.symbols)
             self.bacon_instance(0, -1)
             if self.update == "product" or self.update == "division":
@@ -79,6 +79,7 @@ class BACON_1:
 
         if self.update != "constant":
             if 1 - abs(r) < self.epsilon and abs(c/fmean(b)) > self.c_val:
+                print(1 - abs(r), abs(c/fmean(b)), self.subs_expr(a_), self.subs_expr(b_))
                 self.linear(a_, b_, a, b, m)
 
             elif r > 0:
