@@ -133,9 +133,9 @@ def get_legal_actions(var_list):
     df_len = len(dfs[0].columns)
     if df_len == 2:
         if mcts_args["dataset"] == "black":
-            return [(0.02, 0.04), (0.02, 0.08), (0.05, 0.04), (0.05, 0.08)]
+            return [(0.01, 0.1), (0.05, 0.5), (0.01, 0), (0, 0.1)]
         elif mcts_args["dataset"] == "ideal":
-            return [(0.02, 0.04), (0.1, 0.1), (0.06, 0.6)]
+            return [(0.02, 0.04), (0.06, 0.6)]
     exprs = {idx: [] for idx in range(len(dfs))}
     for idx, df in enumerate(dfs):
         if df_len > 2:
@@ -258,15 +258,15 @@ def game_result(var_list, initial_df):
 
         if eqn == "fail":
             print("equations not combining in good time")
-            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -3}
-            return -4
+            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -1}
+            return -1
 
         loss = loss_helper.loss_calc(initial_df, eqn).loss()
 
         if isinstance(loss, complex):
             print("score is complex - likely solvable by hand")
-            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -2, "eqn_form": eqn}
-            return -2
+            df_dict[str(var_list)] = {"final_eqns": eqns, "score": -1, "eqn_form": eqn}
+            return -1
 
         if mcts_args["dataset"] == "black":
             if loss < 10:
@@ -279,12 +279,10 @@ def game_result(var_list, initial_df):
                 score = 0.2
             elif loss < 30:
                 score = 0.1
+            elif loss < 100:
+                score = 0.001
             else:
                 score = 0
-
-            num_var = len(eqn.free_symbols)
-            if num_var < len(initial_df.columns) - 1:
-                score -= 1.5*(len(initial_df.columns) - num_var)
 
         elif mcts_args["dataset"] == "ideal":
             if loss < 0.0001:
@@ -305,16 +303,18 @@ def game_result(var_list, initial_df):
                 score = 0.1
             else:
                 score = 0
-            num_var = len(eqn.free_symbols)
-            if num_var < len(initial_df.columns) - 1:
-                score -= 0.7*(len(initial_df.columns) - num_var)
+
+        num_var = len(eqn.free_symbols)
+        if num_var < len(initial_df.columns) - 1:
+            score -= 0.7*(len(initial_df.columns) - num_var)
+        score = max(score, -1)
 
         df_dict[str(var_list)] = {"final_eqns": eqns, "score": score, "eqn_form": eqn, "loss": loss}
         print(f"Final form is {eqn.rhs} = {factor(eqn.lhs)} with score {score} and loss {loss}")
         return score
 
     except Exception:
-        df_dict[str(var_list)] = {"final_eqns": eqns, "score": -10}
+        df_dict[str(var_list)] = {"final_eqns": eqns, "score": -1}
         return -1
 
 
@@ -333,7 +333,6 @@ def main_mcts(initial_df, init_state,
         init_state, dict_state = root.best_action()
         print(init_state)
         df_dict = {str(init_state): dict_state}
-        # raise Exception
     print(f"FINAL NODE STATE IS {init_state}")
     eqn = df_dict[str(init_state)]['eqn_form']
     final_score = df_dict[str(init_state)]['score']

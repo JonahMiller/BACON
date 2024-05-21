@@ -1,0 +1,16 @@
+{
+    "layer_method": "mcts",
+    "layer_args": {},
+
+    "laws_method": "",
+    "laws_args": {"epsilon": 0.035,
+                  "delta": 0.05,
+                  "c_val": 0.85,
+                  "epsilon_scale": 1.03,
+                  "delta_scale": 1.3,
+                  "verbose": false},
+
+    "data_space_args": {"c_param": 1,
+                        "sim_num": 30,
+                        "dataset": "ideal"}
+}
