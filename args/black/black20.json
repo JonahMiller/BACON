@@ -1,11 +1,11 @@
 {
     "layer_method": "popular",
-    "layer_args": {"verbose": true},
+    "layer_args": {"verbose": false},
 
     "laws_method": "bacon.1",
     "laws_args": {"epsilon": 0.01,
                   "delta": 0.112,
-                  "epsilon_scale": 1.12,
+                  "epsilon_scale": 1.13,
                   "delta_scale": 1.051,
                   "c_val": 0.3,
                   "verbose": false},
