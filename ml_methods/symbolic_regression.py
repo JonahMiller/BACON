@@ -56,4 +56,4 @@ def main():
 if __name__ == "__main__":
     start = time.time()
     main()
-    print(f"Program took {time.time() - start}s!")
+    print(f"Program took {'{:.2f}'.format(time.time() - start)}s!")
